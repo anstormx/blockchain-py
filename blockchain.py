@@ -5,6 +5,9 @@ import hashlib # for hashing the block
 import json # for encoding the block
 from flask import Flask, jsonify # for web application
 import time
+import requests
+from uuid import uuid4
+from urllib.parse import urlparse
 
 # Blockchain class
 class Blockchain:
@@ -14,6 +17,7 @@ class Blockchain:
         self.difficulty = 4  # Initial difficulty
         self.target_time = 0.5  # Target block time in seconds
         self.create_block(proof=1, previous_hash='0', nonce=0) # genesis block
+        self.nodes = set()
 
     def create_block(self, proof, previous_hash, nonce):
         block = {
@@ -59,9 +63,9 @@ class Blockchain:
         return hashlib.sha256(hash_str).hexdigest()
 
     def adjust_difficulty(self, block_time):
-        if block_time < self.target_time:
+        if block_time < self.target_time * 0.5:
             self.difficulty += 1
-        elif block_time > self.target_time and self.difficulty > 1:
+        elif block_time > self.target_time * 1.5 and self.difficulty > 1:
             self.difficulty -= 1
 
     def hash(self, block):
@@ -97,12 +101,46 @@ class Blockchain:
             'receiver': receiver,
             'amount': amount
         })
-        previous_block = self.get_previous_block()
-        return previous_block['index'] + 1
 
+        previous_block = self.get_previous_block()
+
+        return previous_block['index'] + 1 # return index of block
+
+    def verify_signature(self, sender, signature): # verify signature
+        # verify signature
+        return True        
+
+    def add_node(self, address):
+        parsed_url = urlparse(address)
+        self.nodes.add(parsed_url.netloc)
+
+    def replace_chain(self):
+        network = self.nodes
+        longest_chain = None
+        max_length = len(self.chain)
+
+        for node in network:
+            response = requests.get(f'http://{node}/get_chain')
+
+            if response.status_code == 200:
+                length = response.json()['length']
+                chain = response.json()['chain']
+
+                if length > max_length and self.is_chain_valid(chain):
+                    max_length = length
+                    longest_chain = chain
+
+        if longest_chain:
+            self.chain = longest_chain
+            return True
+
+        return False
 
 # create web application
 app = Flask(__name__)
+
+# create address for the node on Port 5000
+node_address = str(uuid4()).replace('-', '')  # unique address
 
 # create blockchain
 blockchain = Blockchain()
@@ -113,6 +151,7 @@ def mine_block():
     previous_proof = previous_block['proof']
     proof, nonce = blockchain.proof_of_work(previous_proof)
     previous_hash = blockchain.hash(previous_block)
+    blockchain.add_transaction(sender=node_address, receiver='You', amount=1) # reward for mining
     block = blockchain.create_block(proof, previous_hash, nonce)
 
     response = {
@@ -165,6 +204,35 @@ def add_transaction():
     }
 
     return jsonify(response), 201
+
+@app.route('/connect_node', methods=['POST'])
+def connect_node():
+    json = request.get_json()
+    nodes = json.get('nodes')
+
+    if nodes is None:
+        return 'No node', 400
+
+    for node in nodes:
+        blockchain.add_node(node)
+
+    response = {
+        'message': 'All nodes are now connected',
+        'total_nodes': list(blockchain.nodes)
+    }
+
+    return jsonify(response), 201
+
+@app.route('/replace_chain', methods=['GET'])
+def replace_chain():
+    is_chain_replaced = blockchain.replace_chain()
+
+    response = {
+        'is_chain_replaced': f'Chain is replaced: {is_chain_replaced}',
+        'chain': blockchain.chain
+    }
+
+    return jsonify(response), 200
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
