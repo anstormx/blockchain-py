@@ -11,19 +11,22 @@ class Blockchain:
     def __init__(self): # constructor
         self.chain = []
         self.pendings_transactions = []
-        self.difficulty = 1  # Initial difficulty
-        self.target_time = 0.4  # Target block time in seconds
-        self.create_block(proof=1, previous_hash='0')
+        self.difficulty = 4  # Initial difficulty
+        self.target_time = 0.5  # Target block time in seconds
+        self.create_block(proof=1, previous_hash='0', nonce=0) # genesis block
 
-    def create_block(self, proof, previous_hash):
+    def create_block(self, proof, previous_hash, nonce):
         block = {
             'index': len(self.chain) + 1,
             'timestamp': str(datetime.datetime.now()),
             'proof': proof,
             'previous_hash': previous_hash,
-            'difficulty': self.difficulty
+            'transactions': self.pendings_transactions,
+            'difficulty': self.difficulty,
+            'nonce': nonce
         }
 
+        self.pendings_transactions = [] # clear pending transactions
         self.chain.append(block) # append block to chain
         return block
 
@@ -33,14 +36,15 @@ class Blockchain:
     def proof_of_work(self, previous_proof): # hard to find, easy to verify
         start_time = time.time()
         new_proof = 1
+        nonce = 0
         check_proof = False
 
         while not check_proof:
-            hash_operation = hashlib.sha256(str(new_proof * previous_proof).encode()).hexdigest()
-            if hash_operation[:self.difficulty] == '0' * self.difficulty:
+            hash_operation = self.calculate_hash(previous_proof, new_proof, nonce)
+            if int(hash_operation, 16) < 2**(256 - self.difficulty):
                 check_proof = True
             else:
-                new_proof += 1
+                nonce += 1
 
         end_time = time.time()
         block_time = end_time - start_time
@@ -48,12 +52,16 @@ class Blockchain:
 
         self.adjust_difficulty(block_time)
 
-        return new_proof
+        return new_proof, nonce
+
+    def calculate_hash(self, previous_proof, new_proof, nonce):
+        hash_str = f"{previous_proof}{new_proof}{nonce}".encode()
+        return hashlib.sha256(hash_str).hexdigest()
 
     def adjust_difficulty(self, block_time):
         if block_time < self.target_time:
             self.difficulty += 1
-        elif block_time > self.target_time:
+        elif block_time > self.target_time and self.difficulty > 1:
             self.difficulty -= 1
 
     def hash(self, block):
@@ -72,9 +80,10 @@ class Blockchain:
 
             previous_proof = previous_block['proof']
             proof = block['proof']
-            hash_operation = hashlib.sha256(str(proof * previous_proof).encode()).hexdigest()
+            nonce = block['nonce']
+            hash_operation = self.calculate_hash(previous_proof, proof, nonce)
 
-            if hash_operation[:block['difficulty']] != '0' * block['difficulty']:
+            if int(hash_operation, 16) >= 2**(256 - block['difficulty']):
                 return False
 
             previous_block = block
@@ -82,20 +91,29 @@ class Blockchain:
 
         return True
 
+    def add_transaction(self, sender, receiver, amount):
+        self.pendings_transactions.append({
+            'sender': sender,
+            'receiver': receiver,
+            'amount': amount
+        })
+        previous_block = self.get_previous_block()
+        return previous_block['index'] + 1
+
+
 # create web application
 app = Flask(__name__)
 
 # create blockchain
 blockchain = Blockchain()
 
-# routes
 @app.route('/mine_block', methods=['GET'])
 def mine_block():
     previous_block = blockchain.get_previous_block()
     previous_proof = previous_block['proof']
-    proof = blockchain.proof_of_work(previous_proof)
+    proof, nonce = blockchain.proof_of_work(previous_proof)
     previous_hash = blockchain.hash(previous_block)
-    block = blockchain.create_block(proof, previous_hash)
+    block = blockchain.create_block(proof, previous_hash, nonce)
 
     response = {
         'message': 'Congratulations, you just mined a block!',
@@ -103,7 +121,9 @@ def mine_block():
         'timestamp': block['timestamp'],
         'proof': block['proof'],
         'previous_hash': block['previous_hash'],
-        'difficulty': block['difficulty']
+        'transactions': block['transactions'],
+        'difficulty': block['difficulty'],
+        'nonce': block['nonce']
     }
 
     return jsonify(response), 200
@@ -126,6 +146,25 @@ def is_valid():
 
     return jsonify(response), 200
 
-    
-# run web application
-app.run(host='0.0.0.0', port=5000) # localhost:5000
+@app.route('/add_transaction', methods=['POST'])
+def add_transaction():
+    json = request.get_json()
+    transaction_keys = ['sender', 'receiver', 'amount']
+
+    if not all(key in json for key in transaction_keys):
+        return 'Some elements of the transaction are missing', 400
+
+    index = blockchain.add_transaction(
+        json['sender'], 
+        json['receiver'], 
+        json['amount']
+    )
+
+    response = {
+        'message': f'This transaction will be added to block {index}'
+    }
+
+    return jsonify(response), 201
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
