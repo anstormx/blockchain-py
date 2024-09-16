@@ -4,12 +4,15 @@ import datetime # for timestamp of block
 import hashlib # for hashing the block
 import json # for encoding the block
 from flask import Flask, jsonify # for web application
+import time
 
 # Blockchain class
 class Blockchain:
-
     def __init__(self): # constructor
         self.chain = []
+        self.pendings_transactions = []
+        self.difficulty = 1  # Initial difficulty
+        self.target_time = 0.4  # Target block time in seconds
         self.create_block(proof=1, previous_hash='0')
 
     def create_block(self, proof, previous_hash):
@@ -17,7 +20,8 @@ class Blockchain:
             'index': len(self.chain) + 1,
             'timestamp': str(datetime.datetime.now()),
             'proof': proof,
-            'previous_hash': previous_hash
+            'previous_hash': previous_hash,
+            'difficulty': self.difficulty
         }
 
         self.chain.append(block) # append block to chain
@@ -27,17 +31,30 @@ class Blockchain:
         return self.chain[-1]
 
     def proof_of_work(self, previous_proof): # hard to find, easy to verify
+        start_time = time.time()
         new_proof = 1
         check_proof = False
 
-        while check_proof is False:
-            hash_operation = hashlib.sha256(str(new_proof**2 - previous_proof**2).encode()).hexdigest()
-            if hash_operation[:4] == '0000': # difficulty level
+        while not check_proof:
+            hash_operation = hashlib.sha256(str(new_proof * previous_proof).encode()).hexdigest()
+            if hash_operation[:self.difficulty] == '0' * self.difficulty:
                 check_proof = True
             else:
                 new_proof += 1
 
+        end_time = time.time()
+        block_time = end_time - start_time
+        print('Block time: ', block_time)
+
+        self.adjust_difficulty(block_time)
+
         return new_proof
+
+    def adjust_difficulty(self, block_time):
+        if block_time < self.target_time:
+            self.difficulty += 1
+        elif block_time > self.target_time:
+            self.difficulty -= 1
 
     def hash(self, block):
         encoded_block = json.dumps(block, sort_keys=True).encode() # encode block
@@ -55,9 +72,9 @@ class Blockchain:
 
             previous_proof = previous_block['proof']
             proof = block['proof']
-            hash_operation = hashlib.sha256(str(proof**2 - previous_proof**2).encode()).hexdigest()
+            hash_operation = hashlib.sha256(str(proof * previous_proof).encode()).hexdigest()
 
-            if hash_operation[:4] != '0000':
+            if hash_operation[:block['difficulty']] != '0' * block['difficulty']:
                 return False
 
             previous_block = block
@@ -85,7 +102,8 @@ def mine_block():
         'index': block['index'],
         'timestamp': block['timestamp'],
         'proof': block['proof'],
-        'previous_hash': block['previous_hash']
+        'previous_hash': block['previous_hash'],
+        'difficulty': block['difficulty']
     }
 
     return jsonify(response), 200
