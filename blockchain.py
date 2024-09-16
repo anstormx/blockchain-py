@@ -4,20 +4,23 @@ import datetime # for timestamp of block
 import hashlib # for hashing the block
 import json # for encoding the block
 from flask import Flask, jsonify # for web application
-import time
 import requests
 from uuid import uuid4
 from urllib.parse import urlparse
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15
+from Crypto.Hash import SHA256
 
 # Blockchain class
 class Blockchain:
     def __init__(self): # constructor
         self.chain = []
-        self.pendings_transactions = []
+        self.pending_transactions = []
         self.difficulty = 4  # Initial difficulty
         self.target_time = 0.5  # Target block time in seconds
         self.create_block(proof=1, previous_hash='0', nonce=0) # genesis block
         self.nodes = set()
+        self.nonces = {}
 
     def create_block(self, proof, previous_hash, nonce):
         block = {
@@ -25,12 +28,12 @@ class Blockchain:
             'timestamp': str(datetime.datetime.now()),
             'proof': proof,
             'previous_hash': previous_hash,
-            'transactions': self.pendings_transactions,
+            'transactions': self.pending_transactions,
             'difficulty': self.difficulty,
             'nonce': nonce
         }
 
-        self.pendings_transactions = [] # clear pending transactions
+        self.pending_transactions = [] # clear pending transactions
         self.chain.append(block) # append block to chain
         return block
 
@@ -38,7 +41,7 @@ class Blockchain:
         return self.chain[-1]
 
     def proof_of_work(self, previous_proof): # hard to find, easy to verify
-        start_time = time.time()
+        start_time = datetime.datetime.now()
         new_proof = 1
         nonce = 0
         check_proof = False
@@ -50,7 +53,7 @@ class Blockchain:
             else:
                 nonce += 1
 
-        end_time = time.time()
+        end_time = datetime.datetime.now()
         block_time = end_time - start_time
         print('Block time: ', block_time)
 
@@ -72,6 +75,46 @@ class Blockchain:
         encoded_block = json.dumps(block, sort_keys=True).encode() # encode block
         return hashlib.sha256(encoded_block).hexdigest()
 
+    def add_transaction(self, sender, receiver, amount, signature, public_key, nonce=0):
+        transaction = {
+            'sender': sender,
+            'receiver': receiver,
+            'amount': amount,
+            'signature': signature.hex(),
+            'nonce': nonce
+        }
+
+        # Use sorted keys for deterministic serialization
+        transaction_data = json.dumps(transaction, sort_keys=True).encode()
+
+        if self.verify_signature(public_key, transaction_data, signature):
+             # Check if the nonce is valid (greater than the last used nonce)
+            if self.is_valid_nonce(sender, nonce):
+                self.pending_transactions.append(transaction)
+                self.nonces[sender] = nonce # update the nonce for the sender
+                previous_block = self.get_previous_block()
+                return previous_block['index'] + 1 # return index of block
+        else:
+            return False 
+
+    def is_valid_nonce(self, sender, nonce):
+        if sender not in self.nonces:
+            return True # first transaction
+        return nonce > self.nonces[sender]
+
+    def verify_signature(self, public_key, transaction_data, signature):
+        try:
+            public_key = RSA.import_key(public_key)
+            hash_object = SHA256.new(transaction_data)
+            pkcs1_15.new(public_key).verify(hash_object, signature)
+            return True
+        except (ValueError, TypeError):
+            return False      
+
+    def add_node(self, address):
+        parsed_url = urlparse(address)
+        self.nodes.add(parsed_url.netloc)
+
     def is_chain_valid(self, chain):
         previous_block = chain[0]
         block_index = 1
@@ -90,29 +133,30 @@ class Blockchain:
             if int(hash_operation, 16) >= 2**(256 - block['difficulty']):
                 return False
 
+            # verify each transaction's signature
+            for transaction in block['transactions']:
+                sender = transaction['sender']
+                transaction_data = json.dumps({
+                    'sender': sender,
+                    'receiver': transaction['receiver'],
+                    'amount': transaction['amount']
+                }, sort_keys=True).encode()
+                signature = bytes.fromhex(transaction['signature'])
+                if not self.verify_signature(sender, transaction_data, signature):
+                    return False
+
+                # Check if the nonce is valid within the chain
+                if sender not in address_nonces:
+                    address_nonces[sender] = transaction['nonce']
+                elif transaction['nonce'] <= address_nonces[sender]:
+                    return False
+                else:
+                    address_nonces[sender] = transaction['nonce']
+
             previous_block = block
             block_index += 1
 
         return True
-
-    def add_transaction(self, sender, receiver, amount):
-        self.pendings_transactions.append({
-            'sender': sender,
-            'receiver': receiver,
-            'amount': amount
-        })
-
-        previous_block = self.get_previous_block()
-
-        return previous_block['index'] + 1 # return index of block
-
-    def verify_signature(self, sender, signature): # verify signature
-        # verify signature
-        return True        
-
-    def add_node(self, address):
-        parsed_url = urlparse(address)
-        self.nodes.add(parsed_url.netloc)
 
     def replace_chain(self):
         network = self.nodes
@@ -135,6 +179,20 @@ class Blockchain:
             return True
 
         return False
+
+
+# helper functions for key generation and signing
+def generate_keys():
+    key = RSA.generate(2048)
+    private_key = key.export_key().decode()
+    public_key = key.publickey().export_key().decode()
+    return private_key, public_key
+
+def sign_transaction(private_key, transaction_data):
+    key = RSA.import_key(private_key)
+    hash_object = SHA256.new(transaction_data)
+    signature = pkcs1_15.new(key).sign(hash_object)
+    return signature
 
 # create web application
 app = Flask(__name__)
@@ -188,7 +246,7 @@ def is_valid():
 @app.route('/add_transaction', methods=['POST'])
 def add_transaction():
     json = request.get_json()
-    transaction_keys = ['sender', 'receiver', 'amount']
+    transaction_keys = ['sender', 'receiver', 'amount', 'signature', 'public_key', 'nonce']
 
     if not all(key in json for key in transaction_keys):
         return 'Some elements of the transaction are missing', 400
@@ -196,7 +254,10 @@ def add_transaction():
     index = blockchain.add_transaction(
         json['sender'], 
         json['receiver'], 
-        json['amount']
+        json['amount'],
+        json['signature'],
+        json['public_key'],
+        json['nonce']
     )
 
     response = {
@@ -232,6 +293,15 @@ def replace_chain():
         'chain': blockchain.chain
     }
 
+    return jsonify(response), 200
+
+@app.route('/generate_keys', methods=['GET'])
+def generate_keys():
+    private_key, public_key = generate_keys()
+    response = {
+        'private_key': private_key,
+        'public_key': public_key
+    }
     return jsonify(response), 200
 
 if __name__ == '__main__':
