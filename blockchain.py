@@ -1,10 +1,10 @@
-# pip install flask
-
 import datetime # for timestamp of block
 import hashlib # for hashing the block
 import json # for encoding the block
-from flask import Flask, jsonify # for web application
+from flask import Flask, jsonify, request # for web application
 import requests
+import sys
+import time
 from uuid import uuid4
 from urllib.parse import urlparse
 from Crypto.PublicKey import RSA
@@ -17,12 +17,12 @@ class Blockchain:
         self.chain = []
         self.pending_transactions = []
         self.difficulty = 4  # Initial difficulty
-        self.target_time = 0.5  # Target block time in seconds
-        self.create_block(proof=1, previous_hash='0', nonce=0) # genesis block
+        self.target_time = 2  # Target block time in seconds
+        self.create_block(proof=1, previous_hash='0', nonce=0, block_time=0) # genesis block
         self.nodes = set()
         self.nonces = {}
 
-    def create_block(self, proof, previous_hash, nonce):
+    def create_block(self, proof, previous_hash, nonce, block_time):
         block = {
             'index': len(self.chain) + 1,
             'timestamp': str(datetime.datetime.now()),
@@ -30,7 +30,8 @@ class Blockchain:
             'previous_hash': previous_hash,
             'transactions': self.pending_transactions,
             'difficulty': self.difficulty,
-            'nonce': nonce
+            'nonce': nonce,
+            'block_time': block_time
         }
 
         self.pending_transactions = [] # clear pending transactions
@@ -40,8 +41,8 @@ class Blockchain:
     def get_previous_block(self):
         return self.chain[-1]
 
-    def proof_of_work(self, previous_proof): # hard to find, easy to verify
-        start_time = datetime.datetime.now()
+    def proof_of_work(self, previous_proof):
+        start_time = time.time()
         new_proof = 1
         nonce = 0
         check_proof = False
@@ -52,24 +53,30 @@ class Blockchain:
                 check_proof = True
             else:
                 nonce += 1
+                new_proof += 1
 
-        end_time = datetime.datetime.now()
+        end_time = time.time()
         block_time = end_time - start_time
         print('Block time: ', block_time)
 
         self.adjust_difficulty(block_time)
 
-        return new_proof, nonce
+        return new_proof, nonce, block_time
 
     def calculate_hash(self, previous_proof, new_proof, nonce):
         hash_str = f"{previous_proof}{new_proof}{nonce}".encode()
         return hashlib.sha256(hash_str).hexdigest()
 
     def adjust_difficulty(self, block_time):
-        if block_time < self.target_time * 0.5:
+        if block_time < self.target_time * 0.8:
             self.difficulty += 1
-        elif block_time > self.target_time * 1.5 and self.difficulty > 1:
+        elif block_time > self.target_time * 1.2 and self.difficulty > 1:
             self.difficulty -= 1
+        
+        # Ensure difficulty doesn't drop too low
+        self.difficulty = max(self.difficulty, 1)
+        
+        print(f"Adjusted difficulty to {self.difficulty}")
 
     def hash(self, block):
         encoded_block = json.dumps(block, sort_keys=True).encode() # encode block
@@ -80,7 +87,6 @@ class Blockchain:
             'sender': sender,
             'receiver': receiver,
             'amount': amount,
-            'signature': signature.hex(),
             'nonce': nonce
         }
 
@@ -88,13 +94,17 @@ class Blockchain:
         transaction_data = json.dumps(transaction, sort_keys=True).encode()
 
         if self.verify_signature(public_key, transaction_data, signature):
-             # Check if the nonce is valid (greater than the last used nonce)
+            # Check if the nonce is valid (greater than the last used nonce)
             if self.is_valid_nonce(sender, nonce):
                 self.pending_transactions.append(transaction)
                 self.nonces[sender] = nonce # update the nonce for the sender
                 previous_block = self.get_previous_block()
                 return previous_block['index'] + 1 # return index of block
+            else:
+                print('Invalid nonce')
+                return False
         else:
+            print('Signature verification failed')
             return False 
 
     def is_valid_nonce(self, sender, nonce):
@@ -102,14 +112,19 @@ class Blockchain:
             return True # first transaction
         return nonce > self.nonces[sender]
 
-    def verify_signature(self, public_key, transaction_data, signature):
+    def verify_signature(self, public_key_str, transaction_data, signature_hex):
         try:
-            public_key = RSA.import_key(public_key)
-            hash_object = SHA256.new(transaction_data)
-            pkcs1_15.new(public_key).verify(hash_object, signature)
+            print('Verifying signature...')
+            public_key = RSA.import_key(public_key_str) # import public key
+            hash_object = SHA256.new(transaction_data)  # create sha256 hash object
+            signature = bytes.fromhex(signature_hex) # convert signature to bytes
+            pkcs1_15.new(public_key).verify(hash_object, signature) # verify signature
+            print('Signature verified successfully')
+
             return True
-        except (ValueError, TypeError):
-            return False      
+        except (ValueError, TypeError) as e:
+            print(f'Signature verification failed: {str(e)}')
+            return False   
 
     def add_node(self, address):
         parsed_url = urlparse(address)
@@ -118,6 +133,7 @@ class Blockchain:
     def is_chain_valid(self, chain):
         previous_block = chain[0]
         block_index = 1
+        address_nonces = {}
 
         while block_index < len(chain):
             block = chain[block_index]
@@ -139,8 +155,10 @@ class Blockchain:
                 transaction_data = json.dumps({
                     'sender': sender,
                     'receiver': transaction['receiver'],
-                    'amount': transaction['amount']
+                    'amount': transaction['amount'],
+                    'nonce': transaction['nonce']
                 }, sort_keys=True).encode()
+
                 signature = bytes.fromhex(transaction['signature'])
                 if not self.verify_signature(sender, transaction_data, signature):
                     return False
@@ -207,10 +225,10 @@ blockchain = Blockchain()
 def mine_block():
     previous_block = blockchain.get_previous_block()
     previous_proof = previous_block['proof']
-    proof, nonce = blockchain.proof_of_work(previous_proof)
+    proof, nonce, block_time = blockchain.proof_of_work(previous_proof)
     previous_hash = blockchain.hash(previous_block)
-    blockchain.add_transaction(sender=node_address, receiver='You', amount=1) # reward for mining
-    block = blockchain.create_block(proof, previous_hash, nonce)
+    # blockchain.add_transaction(sender=node_address, receiver='You', amount=1) # reward for mining
+    block = blockchain.create_block(proof, previous_hash, nonce, block_time)
 
     response = {
         'message': 'Congratulations, you just mined a block!',
@@ -220,7 +238,8 @@ def mine_block():
         'previous_hash': block['previous_hash'],
         'transactions': block['transactions'],
         'difficulty': block['difficulty'],
-        'nonce': block['nonce']
+        'nonce': block['nonce'],
+        'block_time': block['block_time']
     }
 
     return jsonify(response), 200
@@ -245,19 +264,19 @@ def is_valid():
 
 @app.route('/add_transaction', methods=['POST'])
 def add_transaction():
-    json = request.get_json()
+    add_transaction_json = request.get_json()
     transaction_keys = ['sender', 'receiver', 'amount', 'signature', 'public_key', 'nonce']
 
-    if not all(key in json for key in transaction_keys):
+    if not all(key in add_transaction_json for key in transaction_keys):
         return 'Some elements of the transaction are missing', 400
 
     index = blockchain.add_transaction(
-        json['sender'], 
-        json['receiver'], 
-        json['amount'],
-        json['signature'],
-        json['public_key'],
-        json['nonce']
+        add_transaction_json['sender'], 
+        add_transaction_json['receiver'], 
+        add_transaction_json['amount'],
+        add_transaction_json['signature'],
+        add_transaction_json['public_key'],
+        add_transaction_json['nonce']
     )
 
     response = {
@@ -265,6 +284,30 @@ def add_transaction():
     }
 
     return jsonify(response), 201
+
+@app.route('/sign_transaction', methods=['POST'])
+def sign_transaction_route():
+    transaction_data_json = request.get_json() 
+    transaction_keys = ['sender', 'receiver', 'amount', 'nonce', 'private_key']
+
+    if not all(key in transaction_data_json for key in transaction_keys):
+        return 'Some elements of the transaction are missing', 400
+
+    private_key = transaction_data_json['private_key']
+    transaction_data = json.dumps({
+        'sender': transaction_data_json['sender'],
+        'receiver': transaction_data_json['receiver'],
+        'amount': transaction_data_json['amount'],
+        'nonce': transaction_data_json['nonce']
+    }, sort_keys=True).encode()
+
+    signature = sign_transaction(private_key, transaction_data)
+
+    response = {
+        'signature': signature.hex()
+    }
+
+    return jsonify(response), 200
 
 @app.route('/connect_node', methods=['POST'])
 def connect_node():
@@ -296,7 +339,7 @@ def replace_chain():
     return jsonify(response), 200
 
 @app.route('/generate_keys', methods=['GET'])
-def generate_keys():
+def generate_keys_route():
     private_key, public_key = generate_keys()
     response = {
         'private_key': private_key,
@@ -305,4 +348,7 @@ def generate_keys():
     return jsonify(response), 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    port = 5000  # Default port
+    if len(sys.argv) > 1:
+        port = int(sys.argv[1])
+    app.run(host='0.0.0.0', port=port)
