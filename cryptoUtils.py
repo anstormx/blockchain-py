@@ -18,6 +18,7 @@ def sign_transaction(private_key, transaction_data):
 def verify_signature(public_key_str, transaction_data, signature_hex):
         try:
             print('Verifying signature...')
+            public_key_str = public_key_str.replace('\\n', '\n')  # Fix PEM format
             public_key = RSA.import_key(public_key_str) # import public key
             hash_object = SHA256.new(transaction_data)  # create sha256 hash object
             signature = bytes.fromhex(signature_hex) # convert signature to bytes

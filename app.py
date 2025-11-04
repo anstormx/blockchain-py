@@ -8,9 +8,16 @@ import sys
 app = Flask(__name__)
 blockchain = None
 
-@app.route('/mine_block', methods=['GET'])
+@app.route('/')
+def home():
+    return render_template('index.html')
+
+@app.route('/mine_block', methods=['POST'])
 def mine_block_route():
-    block = blockchain.mine_block()
+    data = request.get_json()
+    miner_address = data.get('miner_address')
+    
+    block = blockchain.mine_block(miner_address=miner_address)
 
     if block:
         response = {
@@ -26,9 +33,7 @@ def mine_block_route():
             'uncles': block['uncles']
         }
     else:
-        response = {
-            'message': 'Error mining block'
-        }
+        response = 'Error mining block'
 
     return jsonify(response), 200
 
