@@ -1,6 +1,6 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from blockchain import Blockchain
-from crypto_utils import generate_keys, sign_transaction
+from cryptoUtils import generate_keys, sign_transaction
 import json
 import sys
 
@@ -16,7 +16,10 @@ def home():
 def mine_block_route():
     data = request.get_json()
     miner_address = data.get('miner_address')
-    
+
+    if miner_address == '':
+        return jsonify({'message': 'Miner address is required'}), 400
+        
     block = blockchain.mine_block(miner_address=miner_address)
 
     if block:
@@ -26,16 +29,16 @@ def mine_block_route():
             'timestamp': block['timestamp'],
             'previous_hash': block['previous_hash'],
             'transactions': block['transactions'],
+            'transaction_count': len(block['transactions']),
             'merkle_root': block['merkleroot'],
             'difficulty': block['difficulty'],
             'nonce': block['nonce'],
             'block_time': block['block_time'],
             'uncles': block['uncles']
         }
+        return jsonify(response), 200
     else:
-        response = 'Error mining block'
-
-    return jsonify(response), 200
+        return jsonify({'message': 'Error mining block'}), 500
 
 @app.route('/get_chain', methods=['GET'])
 def get_chain_route():
@@ -78,9 +81,9 @@ def add_transaction_route():
     )
 
     if index is False:
-        response = {'message': 'Invalid transaction'}
+        response = 'Invalid transaction'
     else:
-        response = {'message': f'Transaction will be added to Block {index}'}
+        response = f'Transaction will be added to Block {index}'
 
 
     return jsonify(response), 201
@@ -93,7 +96,7 @@ def sign_transaction_route():
     if not all(key in transaction_data_json for key in transaction_keys):
         return 'Some elements of the transaction are missing', 400
 
-    private_key = transaction_data_json['private_key']
+    private_key = transaction_data_json['private_key'].replace('\\n', '\n')
     transaction_data = json.dumps({
         'sender': transaction_data_json['sender'],
         'receiver': transaction_data_json['receiver'],
@@ -114,18 +117,13 @@ def connect_node_route():
     json = request.get_json()
     nodes = json.get('nodes')
 
-    if nodes is None:
-        return 'No node', 400
+    if len(nodes) == 0:
+        return jsonify({'message': 'No nodes provided'}), 400
 
     for node in nodes:
         blockchain.add_node(node)
 
-    response = {
-        'message': 'All nodes are now connected',
-        'total_nodes': list(blockchain.nodes)
-    }
-
-    return jsonify(response), 201
+    return jsonify({'message': 'All nodes are now connected', 'total_nodes': list(blockchain.nodes)}), 201
 
 @app.route('/get_nodes', methods=['GET'])
 def get_nodes_route():
@@ -159,11 +157,26 @@ def receive_transaction_route():
 @app.route('/receive_block', methods=['POST'])
 def receive_block_route():
     block = request.get_json()
+    
+    # Check if block connects to our current chain
     if blockchain.is_chain_valid([blockchain.get_previous_block(), block]):
         blockchain.chain.append(block)
+        blockchain.update_nonces_from_block(block)  # Update nonces from confirmed block
         blockchain.sync_transaction_pool()
         return jsonify({'message': 'Block received and added to chain'}), 200
-    return jsonify({'message': 'Invalid block'}), 400
+    
+    # If block doesn't connect, chains might be out of sync - trigger consensus
+    print('Block does not connect to current chain, applying consensus...')
+    blockchain.apply_consensus()
+    
+    # Try again after consensus
+    if blockchain.is_chain_valid([blockchain.get_previous_block(), block]):
+        blockchain.chain.append(block)
+        blockchain.update_nonces_from_block(block)  # Update nonces from confirmed block
+        blockchain.sync_transaction_pool()
+        return jsonify({'message': 'Block received after consensus sync'}), 200
+    
+    return jsonify({'message': 'Invalid block - does not connect to any known chain'}), 400
 
 @app.route('/apply_consensus', methods=['GET'])
 def apply_consensus_route():
@@ -185,9 +198,50 @@ def apply_consensus_route():
 @app.route('/generate_keys', methods=['GET'])
 def generate_keys_route():
     private_key, public_key = generate_keys()
+    
+    # Convert actual newlines to literal \n strings for easy copy-paste in JSON requests
+    private_key_formatted = private_key.replace('\n', '\\n')
+    public_key_formatted = public_key.replace('\n', '\\n')
+    
     response = {
-        'private_key': private_key,
-        'public_key': public_key
+        'private_key': private_key_formatted,
+        'public_key': public_key_formatted
+    }
+    return jsonify(response), 200
+
+@app.route('/get_block_reward', methods=['GET'])
+def get_block_reward_route():
+    """Get the current block reward for the next block."""
+    current_height = len(blockchain.chain) + 1
+    reward = blockchain.calculate_block_reward(current_height)
+    response = {
+        'current_block_height': len(blockchain.chain),
+        'next_block_height': current_height,
+        'next_block_reward': reward,
+        'initial_reward': blockchain.initial_block_reward,
+        'halving_interval': blockchain.halving_interval,
+        'halvings_occurred': current_height // blockchain.halving_interval
+    }
+    return jsonify(response), 200
+
+@app.route('/get_mining_stats', methods=['GET'])
+def get_mining_stats_route():
+    """Get comprehensive mining statistics."""
+    total_blocks = len(blockchain.chain)
+    total_supply = 0
+    
+    # Calculate total supply and fees
+    for block in blockchain.chain:
+        for tx in block.get('transactions', []):
+            if tx.get('sender') == 'coinbase':
+                total_supply += tx.get('block_reward', 0)
+    
+    response = {
+        'total_blocks': total_blocks,
+        'total_supply': total_supply,
+        'current_difficulty': blockchain.difficulty,
+        'pending_transactions': len(blockchain.pending_transactions),
+        'next_block_reward': blockchain.calculate_block_reward(total_blocks + 1)
     }
     return jsonify(response), 200
 

@@ -5,8 +5,8 @@ import requests
 import time
 from urllib.parse import urlparse
 import logging
-from crypto_utils import verify_signature
-from merkletree import MerkleTree
+from cryptoUtils import verify_signature
+from merkleTree import MerkleTree
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -21,7 +21,12 @@ class Blockchain:
         self.uncle_blocks = [] 
         self.max_uncles = 2
         self.transaction_pool = set()
-        self.load_nodes_from_file()  # Load nodes when initializing the blockchain
+        self.load_nodes_from_file()
+        
+        # Coinbase/Mining reward parameters
+        self.initial_block_reward = 50.0  # Initial mining reward
+        self.halving_interval = 210  # Halve reward every 210 blocks
+        
         self.port = port
         self.node_address = self.get_node_address()
         self.create_block(previous_hash='0', nonce=0, block_time=0, difficulty=self.difficulty)
@@ -34,42 +39,42 @@ class Blockchain:
                 self.add_node(node)
             logging.info(f"Loaded {len(self.nodes)} nodes from nodes.json")
             logging.info(f"Current nodes: {self.nodes}")
-        except FileNotFoundError:
-            logging.error("nodes.json file not found. No nodes loaded.")
-        except json.JSONDecodeError:
-            logging.error("Error parsing nodes.json. Please ensure it's a valid JSON file.")
         except Exception as e:
             logging.error(f"An unexpected error occurred while loading nodes: {str(e)}")
         
     def add_node(self, address):
         try:
             parsed_url = urlparse(address)
-            if parsed_url.netloc:
-                self.nodes.add(parsed_url.netloc)
-                logging.info(f"Added node: {parsed_url.netloc}")
-            elif parsed_url.path:
-                # Accepts an URL without scheme like '192.168.0.5:5000'.
-                self.nodes.add(parsed_url.path)
-                logging.info(f"Added node: {parsed_url.path}")
+            if parsed_url.netloc or parsed_url.path:
+                self.nodes.add(parsed_url.netloc or parsed_url.path)
+                logging.info(f"Added node: {parsed_url.netloc or parsed_url.path}")
             else:
                 raise ValueError('Invalid URL')
         except Exception as e:
             logging.error(f"Failed to add node {address}: {str(e)}")
 
-    def mine_block(self):
+    def mine_block(self, miner_address=None):
+        if miner_address is None:
+            miner_address = self.node_address
+        
         previous_block = self.get_previous_block()
         nonce, block_time, difficulty = self.proof_of_work(previous_block['nonce'])
         previous_hash = self.hash(previous_block)
         
-        block = self.create_block(previous_hash, nonce, block_time, difficulty)
+        coinbase_tx = self.create_coinbase_transaction(miner_address=miner_address)
+        
+        # Create block with coinbase transaction
+        block = self.create_block(previous_hash, nonce, block_time, difficulty, coinbase_tx)
         print('Block %d mined' % block['index'])
         
         # Update nonces after mining the block
-        for transaction in block['transactions']:
-            sender = transaction['sender']
-            self.nonces[sender] = transaction['nonce']
+        self.update_nonces_from_block(block)
         
-        self.broadcast_block(block)  # Broadcast the newly mined block to other nodes
+        # Clean up transaction pool - remove confirmed transactions
+        self.sync_transaction_pool()
+        
+        # Broadcast the newly mined block to other nodes
+        self.broadcast_block(block)
 
         return block
     
@@ -90,13 +95,19 @@ class Blockchain:
             except requests.RequestException as e:
                 print(f"Failed to broadcast block to {node}: {str(e)}")
 
-    def create_block(self, previous_hash, nonce, block_time, difficulty):
-        merkletree = MerkleTree(self.pending_transactions)
+    def create_block(self, previous_hash, nonce, block_time, difficulty, coinbase_tx=None):
+        # Build transaction list with coinbase as first transaction
+        if coinbase_tx:
+            all_transactions = [coinbase_tx] + self.pending_transactions
+        else:
+            all_transactions = self.pending_transactions
+        
+        merkletree = MerkleTree(all_transactions)
         block = {
             'index': len(self.chain) + 1,
             'timestamp': str(datetime.datetime.now()),
             'previous_hash': previous_hash,
-            'transactions': self.pending_transactions,
+            'transactions': all_transactions,
             'merkleroot': merkletree.get_root(),
             'difficulty': difficulty,
             'nonce': nonce,
@@ -175,6 +186,26 @@ class Blockchain:
     def get_node_address(self):
         return f"127.0.0.1:{self.port}"
 
+    def calculate_block_reward(self, block_height):
+        halvings = block_height // self.halving_interval
+        reward = self.initial_block_reward / (2 ** halvings)
+        return reward
+
+    def create_coinbase_transaction(self, miner_address):
+        block_height = len(self.chain) + 1
+        block_reward = self.calculate_block_reward(block_height)
+        
+        coinbase_tx = {
+            'sender': 'coinbase',
+            'receiver': miner_address,
+            'amount': block_reward,
+            'nonce': block_height - 1,
+            'signature': None,  # No signature needed for coinbase
+            'public_key': None  # No public key needed
+        }
+
+        return coinbase_tx
+
     def add_transaction(self, sender, receiver, amount, signature, public_key, nonce=0):
         transaction = {
             'sender': sender,
@@ -191,14 +222,13 @@ class Blockchain:
                 transaction['public_key'] = public_key
 
                 self.pending_transactions.append(transaction)
+
                 transaction_str = json.dumps(transaction, sort_keys=True)
                 self.transaction_pool.add(transaction_str)
-                self.nonces[sender] = nonce # update the nonce for the sender
-                previous_block = self.get_previous_block()
 
                 self.broadcast_transaction(transaction)  # Broadcast the transaction to other nodes
 
-                return previous_block['index'] + 1 # return index of block
+                return len(self.chain) + 1
             else:
                 print('Invalid nonce')
                 return False
@@ -208,11 +238,26 @@ class Blockchain:
 
     def is_valid_nonce(self, sender, nonce):
         if sender not in self.nonces:
-            return True # first transaction
+            if nonce != 0:
+                return False
+            return True # First transaction
         return nonce > self.nonces[sender]
+    
+    def update_nonces_from_block(self, block):
+        """Update nonces based on transactions in a confirmed block."""
+        for transaction in block['transactions']:
+            self.nonces[transaction['sender']] = transaction['nonce']
+    
+    def rebuild_nonces(self):
+        """Rebuild nonces from the entire blockchain (used after consensus)."""
+        self.nonces = {}  # Clear existing nonces
+        for block in self.chain:
+            self.update_nonces_from_block(block)
 
     def broadcast_transaction(self, transaction):
         for node in self.nodes:
+            if node == self.get_node_address():
+                continue
             try:
                 requests.post(f'http://{node}/receive_transaction', json=transaction)
             except requests.RequestException as e:
@@ -250,6 +295,11 @@ class Blockchain:
                 return False
 
             for transaction in block['transactions']:
+                # Skip validation for coinbase transactions (they don't have signatures)
+                if transaction.get('sender') == 'coinbase':
+                    continue
+                
+                # Validate regular transactions
                 transaction_data = json.dumps({
                     'sender': transaction['sender'],
                     'receiver': transaction['receiver'],
@@ -257,11 +307,15 @@ class Blockchain:
                     'nonce': transaction['nonce']
                 }, sort_keys=True).encode()
 
-                if not self.verify_signature(transaction['public_key'], transaction_data, transaction['signature']):
+                if not verify_signature(transaction['public_key'], transaction_data, transaction['signature']):
                     print('Invalid transaction signature')
                     return False
 
                 if transaction['sender'] not in address_nonces:
+                    # First transaction
+                    if transaction["nonce"] != 0:
+                        print('Invalid nonce')
+                        return False
                     address_nonces[transaction['sender']] = transaction['nonce']
                 elif transaction['nonce'] <= address_nonces[transaction['sender']]:
                     print('Invalid nonce')
@@ -295,6 +349,7 @@ class Blockchain:
 
         if longest_chain:
             self.chain = longest_chain
+            self.rebuild_nonces()  # Rebuild nonces from the new chain
             self.sync_transaction_pool()  # Sync transaction pool after updating chain
             consensus_applied = True
         else:
