@@ -5,7 +5,7 @@ import requests
 import time
 from urllib.parse import urlparse
 import logging
-from cryptoUtils import verify_signature
+from cryptoUtilsV2 import verify_signature
 from merkleTree import MerkleTree
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

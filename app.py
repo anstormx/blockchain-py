@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, render_template
 from blockchain import Blockchain
-from cryptoUtils import generate_keys, sign_transaction
+from cryptoUtilsV2 import generate_keys, sign_transaction
 import json
 import sys
 

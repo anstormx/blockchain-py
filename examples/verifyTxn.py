@@ -19,24 +19,18 @@ transaction = {
 def verify_transaction(transaction, public_key_str, signature_hex):
     try:
         print(f'Public key: {public_key_str} \n')
-        print(f'Transaction data: {transaction} \n')
-        print(f'Signature: {signature_hex}... \n')
+        print(f'Signature: {signature_hex}\n')
         public_key = RSA.import_key(public_key_str)
-
         transaction_data = json.dumps(transaction, sort_keys=True).encode() # convert transaction to JSON string and encode it
-
         hash_object = SHA256.new(transaction_data) # create SHA256 hash object
-        print(f'Hash: {hash_object.hexdigest()} \n')
-
         signature = bytes.fromhex(signature_hex) # convert signature to bytes
-        print(f'Signature: {signature.hex()}... \n')
-
         pkcs1_15.new(public_key).verify(hash_object, signature) # verify signature
-        print("Signature verification succeeded. \n")
+        
+        print("Signature verified successfully!")
         return True
 
     except Exception as e:
-        print(f"Signature verification failed: {e} \n")
+        print(f"Signature verification failed: {str(e)}")
         return False
 
 verify_transaction(transaction, public_key_str, signature_hex)
