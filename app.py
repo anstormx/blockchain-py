@@ -1,6 +1,6 @@
 from flask import Flask, jsonify, request, render_template
 from blockchain import Blockchain
-from cryptoUtilsV2 import generate_keys, sign_transaction
+from cryptoUtilsV2 import generate_keys, sign_transaction, validate_address
 import json
 import sys
 
@@ -17,8 +17,10 @@ def mine_block_route():
     data = request.get_json()
     miner_address = data.get('miner_address')
 
-    if miner_address == '':
+    if not miner_address:
         return jsonify({'message': 'Miner address is required'}), 400
+    if not validate_address(miner_address):
+        return jsonify({'message': 'Invalid miner address'}), 400
         
     block = blockchain.mine_block(miner_address=miner_address)
 
@@ -66,17 +68,23 @@ def is_valid_route():
 @app.route('/add_transaction', methods=['POST'])
 def add_transaction_route():
     add_transaction_json = request.get_json()
-    transaction_keys = ['sender', 'receiver', 'amount', 'signature', 'public_key', 'nonce']
+    transaction_keys = ['sender', 'receiver', 'amount', 'signature', 'nonce']
 
-    if not all(key in add_transaction_json for key in transaction_keys):
-        return 'Some elements of the transaction are missing', 400
+    if not all(key in add_transaction_json and add_transaction_json[key] not in [None, ''] for key in transaction_keys):
+        print('Some elements of the transaction are missing')
+        return jsonify({'message': 'Some elements of the transaction are missing'}), 400
+    if not validate_address(add_transaction_json['sender']):
+        print('Invalid sender address')
+        return jsonify({'message': 'Invalid sender address'}), 400
+    if not validate_address(add_transaction_json['receiver']):
+        print('Invalid receiver address')
+        return jsonify({'message': 'Invalid receiver address'}), 400
 
     index = blockchain.add_transaction(
         add_transaction_json['sender'], 
         add_transaction_json['receiver'], 
         add_transaction_json['amount'],
         add_transaction_json['signature'],
-        add_transaction_json['public_key'],
         add_transaction_json['nonce']
     )
 
@@ -93,13 +101,21 @@ def sign_transaction_route():
     transaction_data_json = request.get_json() 
     transaction_keys = ['sender', 'receiver', 'amount', 'nonce', 'private_key']
 
-    if not all(key in transaction_data_json for key in transaction_keys):
-        return 'Some elements of the transaction are missing', 400
+    # Check if all keys exist AND have non-empty values
+    if not all(key in transaction_data_json and transaction_data_json[key] not in [None, ''] for key in transaction_keys):
+        print('Some elements of the transaction are missing or empty')
+        return jsonify({'message': 'Some elements of the transaction are missing or empty'}), 400
+    if not validate_address(transaction_data_json['sender']):
+        print('Invalid sender address')
+        return jsonify({'message': 'Invalid sender address'}), 400
+    if not validate_address(transaction_data_json['receiver']):
+        print('Invalid receiver address')
+        return jsonify({'message': 'Invalid receiver address'}), 400
 
     private_key = transaction_data_json['private_key'].replace('\\n', '\n')
     transaction_data = json.dumps({
-        'sender': transaction_data_json['sender'],
-        'receiver': transaction_data_json['receiver'],
+        'sender_address': transaction_data_json['sender'],
+        'receiver_address': transaction_data_json['receiver'],
         'amount': transaction_data_json['amount'],
         'nonce': transaction_data_json['nonce']
     }, sort_keys=True).encode()

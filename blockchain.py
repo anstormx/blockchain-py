@@ -206,20 +206,19 @@ class Blockchain:
 
         return coinbase_tx
 
-    def add_transaction(self, sender, receiver, amount, signature, public_key, nonce=0):
+    def add_transaction(self, sender_address, receiver_address, amount, signature, nonce=0):
         transaction = {
-            'sender': sender,
-            'receiver': receiver,
+            'sender_address': sender_address,
+            'receiver_address': receiver_address,
             'amount': amount,
             'nonce': nonce
         }
 
         transaction_data = json.dumps(transaction, sort_keys=True).encode()
 
-        if verify_signature(public_key, transaction_data, signature):
-            if self.is_valid_nonce(sender, nonce):
+        if verify_signature(sender_address, transaction_data, signature):
+            if self.is_valid_nonce(sender_address, nonce):
                 transaction['signature'] = signature
-                transaction['public_key'] = public_key
 
                 self.pending_transactions.append(transaction)
 

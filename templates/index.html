@@ -351,25 +351,25 @@
                     <p style="margin-bottom: 20px; color: #666;">Sign a transaction with your private key</p>
                     <div class="form-group">
                         <label>Sender Address</label>
-                        <input type="text" id="signSender" placeholder="Enter sender address">
+                        <input type="text" id="signSender" placeholder="Enter sender address" value="0322b9af9e48f7d4ab3ca11ade0c93b2bc1ca80abc20c97e96717bbff488002dc6">
                     </div>
                     <div class="form-group">
                         <label>Receiver Address</label>
-                        <input type="text" id="signReceiver" placeholder="Enter receiver address">
+                        <input type="text" id="signReceiver" placeholder="Enter receiver address" value="03c116d12d88f3d32450c643ba706c7ff57dfdb3554078cff42c93535a5a592f23">
                     </div>
                     <div class="form-group">
                         <label>Amount</label>
-                        <input type="number" id="signAmount" placeholder="Enter amount" step="0.01">
+                        <input type="number" id="signAmount" placeholder="Enter amount" step="1" value="10">
                     </div>
                     <div class="form-group">
                         <label>Nonce</label>
-                        <input type="number" id="signNonce" placeholder="Enter nonce" value="1">
+                        <input type="number" id="signNonce" placeholder="Enter nonce" step="1" value="0">
                     </div>
                     <div class="form-group">
                         <label>Private Key</label>
-                        <textarea id="signPrivateKey" placeholder="Paste your private key here"></textarea>
+                        <input type="text" id="signPrivateKey" placeholder="Paste your private key here" value="55a01033a18554123fc73f24c4a9cc6a82a7d6c1548a937daf7549521deff403">
                     </div>
-                    <button onclick="signTransaction()">✍️ Sign Transaction</button>
+                    <button onclick="signTransaction()">Sign Transaction</button>
                     <div id="signResponse"></div>
                 </div>
 
@@ -378,29 +378,25 @@
                     <p style="margin-bottom: 20px; color: #666;">Submit a signed transaction to the blockchain</p>
                     <div class="form-group">
                         <label>Sender Address</label>
-                        <input type="text" id="addSender" placeholder="Enter sender address">
+                        <input type="text" id="addSender" placeholder="Enter sender address" value="0322b9af9e48f7d4ab3ca11ade0c93b2bc1ca80abc20c97e96717bbff488002dc6">
                     </div>
                     <div class="form-group">
                         <label>Receiver Address</label>
-                        <input type="text" id="addReceiver" placeholder="Enter receiver address">
+                        <input type="text" id="addReceiver" placeholder="Enter receiver address" value="03c116d12d88f3d32450c643ba706c7ff57dfdb3554078cff42c93535a5a592f23">
                     </div>
                     <div class="form-group">
                         <label>Amount</label>
-                        <input type="number" id="addAmount" placeholder="Enter amount" step="0.01">
+                        <input type="number" id="addAmount" placeholder="Enter amount" step="1" value="10">
                     </div>
                     <div class="form-group">
                         <label>Nonce</label>
-                        <input type="number" id="addNonce" placeholder="Enter nonce" value="1">
+                        <input type="number" id="addNonce" placeholder="Enter nonce" step="1" value="0">
                     </div>
                     <div class="form-group">
                         <label>Signature (hex)</label>
-                        <textarea id="addSignature" placeholder="Paste transaction signature here"></textarea>
+                        <input id="addSignature" placeholder="Paste transaction signature here">
                     </div>
-                    <div class="form-group">
-                        <label>Public Key</label>
-                        <textarea id="addPublicKey" placeholder="Paste public key here"></textarea>
-                    </div>
-                    <button onclick="addTransaction()">➕ Add Transaction</button>
+                    <button onclick="addTransaction()">Add Transaction</button>
                     <div id="addResponse"></div>
                 </div>
             </div>
@@ -557,19 +553,13 @@
                 });
                 const result = await response.json();
                 
-                const element = document.getElementById('signResponse');
-                element.innerHTML = `
-                    <div class="response success">
-                        <h4>✅ Transaction Signed Successfully</h4>
-                        <div style="margin-top: 15px;">
-                            <strong>Signature:</strong>
-                            <div class="key-display">${result.signature}</div>
-                        </div>
-                        <p style="margin-top: 15px; color: #666;">
-                            Copy this signature to use in "Add Transaction" section
-                        </p>
-                    </div>
-                `;
+                // Check if response is an error
+                if (!response.ok) {
+                    displayResponse('signResponse', result.message, false);
+                    return;
+                }
+                
+                displayResponse('signResponse', result.signature, response.ok);
             } catch (error) {
                 displayResponse('signResponse', { error: error.message }, false);
             }
@@ -584,7 +574,6 @@
                 amount: parseFloat(document.getElementById('addAmount').value),
                 nonce: parseInt(document.getElementById('addNonce').value),
                 signature: document.getElementById('addSignature').value,
-                public_key: document.getElementById('addPublicKey').value
             };
 
             try {
@@ -594,6 +583,13 @@
                     body: JSON.stringify(data)
                 });
                 const result = await response.json();
+
+                // Check if response is an error
+                if (!response.ok) {
+                    displayResponse('addResponse', result.message, false);
+                    return;
+                }
+
                 displayResponse('addResponse', result, response.ok);
             } catch (error) {
                 displayResponse('addResponse', { error: error.message }, false);

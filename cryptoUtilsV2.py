@@ -124,7 +124,7 @@ def child_key(parent_sk: int, chain_code: bytes, curve_id: str,
     return sk, child_chain_code
 
 # ============================================================================
-# Public API Functions (compatible with blockchain.py and app.py)
+# Public API Functions
 # ============================================================================
 
 def generate_keys(app_name: str = "blockchain-py", 
@@ -166,6 +166,35 @@ def generate_keys(app_name: str = "blockchain-py",
     private_key_hex = sk_bytes.hex()
     
     return private_key_hex, public_key_hex
+
+def validate_address(address_hex: str) -> bool:
+    """
+    Validate that an address is a valid secp256k1 compressed public key
+    
+    Args:
+        address_hex: Address as hex string (should be compressed public key)
+    
+    Returns:
+        True if valid, False otherwise
+    """
+    try:
+        # Check if valid hex string
+        address_bytes = bytes.fromhex(address_hex)
+        
+        # Check length (33 bytes for compressed secp256k1 public key)
+        if len(address_bytes) != 33:
+            return False
+        
+        # Check prefix (02 or 03 for compressed keys)
+        if address_bytes[0] not in (0x02, 0x03):
+            return False
+        
+        # Try to parse as valid secp256k1 public key
+        VerifyingKey.from_string(address_bytes, curve=SECP256k1)
+        return True
+        
+    except (ValueError, TypeError):
+        return False
 
 def sign_transaction(private_key_hex: str, transaction_data: bytes, 
                      chain_id: bytes = DEFAULT_CHAIN_ID) -> bytes:
@@ -267,61 +296,3 @@ def verify_signature(public_key_hex: str, transaction_data: bytes,
     except (BadSignatureError, ValueError, TypeError) as e:
         print(f'Signature verification failed: {str(e)}')
         return False
-
-# ============================================================================
-# Advanced Functions (optional, for more control)
-# ============================================================================
-
-def generate_keys_with_chain_code(app_name: str = "blockchain-py",
-                                  derivation_indices: list = None) -> tuple:
-    """
-    Generate keys with chain code for further derivation
-    
-    Returns:
-        tuple: (private_key_hex, public_key_hex, chain_code_hex)
-    """
-    master_seed = make_master_seed(app_name, passphrase=None)
-    sk, chain_code = curve_master_key(master_seed, "secp256k1", SECP256K1_ORDER)
-    
-    if derivation_indices:
-        for index in derivation_indices:
-            sk, chain_code = child_key(
-                sk, chain_code, "secp256k1", index, SECP256K1_ORDER, hardened=True
-            )
-    
-    sk_bytes = sk.to_bytes(32, "big")
-    signing_key = SigningKey.from_string(sk_bytes, curve=SECP256k1)
-    verifying_key = signing_key.get_verifying_key()
-    
-    private_key_hex = sk_bytes.hex()
-    public_key_hex = verifying_key.to_string("compressed").hex()
-    chain_code_hex = chain_code.hex()
-    
-    return private_key_hex, public_key_hex, chain_code_hex
-
-def derive_child_from_parent(parent_private_key_hex: str, 
-                            parent_chain_code_hex: str,
-                            child_index: int) -> tuple:
-    """
-    Derive a child key from parent key and chain code
-    
-    Returns:
-        tuple: (child_private_key_hex, child_public_key_hex, child_chain_code_hex)
-    """
-    parent_sk = int.from_bytes(bytes.fromhex(parent_private_key_hex), "big")
-    parent_chain_code = bytes.fromhex(parent_chain_code_hex)
-    
-    child_sk, child_chain_code = child_key(
-        parent_sk, parent_chain_code, "secp256k1", 
-        child_index, SECP256K1_ORDER, hardened=True
-    )
-    
-    child_sk_bytes = child_sk.to_bytes(32, "big")
-    signing_key = SigningKey.from_string(child_sk_bytes, curve=SECP256k1)
-    verifying_key = signing_key.get_verifying_key()
-    
-    return (
-        child_sk_bytes.hex(),
-        verifying_key.to_string("compressed").hex(),
-        child_chain_code.hex()
-    )

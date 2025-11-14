@@ -208,9 +208,11 @@ def generate_secp256k1_keypair(app_name: str = "blockchain-py",
     
     # Get public key (compressed format)
     verifying_key = signing_key.get_verifying_key()
+    private_key_hex = sk_bytes.hex()
     public_key_hex = verifying_key.to_string("compressed").hex()
+    chain_code_hex = chain_code.hex()
     
-    return sk, public_key_hex, signing_key, chain_code
+    return private_key_hex, public_key_hex, signing_key, chain_code_hex
 
 def sign_transaction_sha3(signing_key: SigningKey, transaction: dict, 
                            chain_id: bytes = DEFAULT_CHAIN_ID) -> str:
@@ -258,23 +260,27 @@ def sign_transaction_sha3(signing_key: SigningKey, transaction: dict,
 if __name__ == "__main__":
     # Example transaction
     transaction = {
-        'sender': "Alice",
-        'receiver': "Bob",
+        'sender_address': "0322b9af9e48f7d4ab3ca11ade0c93b2bc1ca80abc20c97e96717bbff488002dc6",
+        'receiver_address': "03c116d12d88f3d32450c643ba706c7ff57dfdb3554078cff42c93535a5a592f23",
         'amount': 10,
-        'nonce': 1 
+        'nonce': 0
     }
     
     # Generate keypair with hierarchical derivation (BIP32-style)
     # Path: m/44'/0'/0'/0 (4 levels of hardened derivation)
-    private_key_int, public_key_hex, signing_key, chain_code = generate_secp256k1_keypair(
-        app_name="blockchain-py",
-        passphrase=None,  # Set to b"your_passphrase" for deterministic generation
-        derivation_indices=[44, 0, 0, 0]  # BIP32-style path indices
-    )
+    # private_key_hex, public_key_hex, signing_key, chain_code_hex = generate_secp256k1_keypair(
+    #     app_name="blockchain-py",
+    #     passphrase=None,  # Set to b"your_passphrase" for deterministic generation
+    #     derivation_indices=[44, 0, 0, 0]  # BIP32-style path indices
+    # )
+
+    private_key_hex = "55a01033a18554123fc73f24c4a9cc6a82a7d6c1548a937daf7549521deff403"
+    public_key_hex = "0322b9af9e48f7d4ab3ca11ade0c93b2bc1ca80abc20c97e96717bbff488002dc6"
+    signing_key = SigningKey.from_string(bytes.fromhex(private_key_hex), curve=SECP256k1)
     
-    print(f"Private Key (int): \n{private_key_int}\n")
+    print(f"Private Key (hex): \n{private_key_hex}\n")
     print(f"Public Key (compressed hex): \n{public_key_hex}\n")
-    print(f"Chain Code: {chain_code.hex()}\n")
+    # print(f"Chain Code: {chain_code_hex}\n")
     
     # Sign transaction with deterministic ECDSA + low-S
     signature = sign_transaction_sha3(signing_key, transaction)
