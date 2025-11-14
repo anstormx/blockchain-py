@@ -325,12 +325,12 @@
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="showTab('keys')">🔑 Keys</button>
-            <button class="tab" onclick="showTab('transactions')">💸 Transactions</button>
-            <button class="tab" onclick="showTab('mining')">⛏️ Mining</button>
-            <button class="tab" onclick="showTab('blockchain')">📦 Blockchain</button>
-            <button class="tab" onclick="showTab('nodes')">🌐 Nodes</button>
-            <button class="tab" onclick="showTab('validation')">✅ Validation</button>
+            <button class="tab active" onclick="showTab('keys')">Generate Keys</button>
+            <button class="tab" onclick="showTab('transactions')">Sign or Add Transactions</button>
+            <button class="tab" onclick="showTab('mining')">Mine Block</button>
+            <button class="tab" onclick="showTab('blockchain')">View Blockchain</button>
+            <button class="tab" onclick="showTab('nodes')">View Connected Nodes</button>
+            <button class="tab" onclick="showTab('validation')">Validate Blockchain</button>
         </div>
 
         <div class="content">
@@ -338,8 +338,7 @@
             <div id="keys" class="tab-content active">
                 <div class="card">
                     <h3>Generate Public/Private Key Pair</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Generate a new RSA key pair for signing transactions</p>
-                    <button onclick="generateKeys()">🔑 Generate New Keys</button>
+                    <button onclick="generateKeys()">Generate New Keys</button>
                     <div id="keysResponse"></div>
                 </div>
             </div>
@@ -408,9 +407,9 @@
                     <p style="margin-bottom: 20px; color: #666;">Mine pending transactions into a new block using Proof of Work</p>
                     <div class="form-group">
                         <label>Miner Address</label>
-                        <input type="text" id="mineMinerAddress" placeholder="Enter miner address">
+                        <input type="text" id="mineMinerAddress" placeholder="Enter miner address" value="03cc7a7c21f92dbe8f4952ea127b174ef5f1facc711ad6d267b6762806d261fd3b">
                     </div>
-                    <button onclick="mineBlock()">⛏️ Mine Block</button>
+                    <button onclick="mineBlock()">Mine Block</button>
                     <div id="mineResponse"></div>
                 </div>
             </div>
@@ -420,7 +419,7 @@
                 <div class="card">
                     <h3>View Blockchain</h3>
                     <p style="margin-bottom: 20px; color: #666;">Display the complete blockchain with all blocks and transactions</p>
-                    <button onclick="getChain()">📦 Get Blockchain</button>
+                    <button onclick="getChain()">Get Blockchain</button>
                     <div id="chainResponse"></div>
                 </div>
             </div>
@@ -430,7 +429,7 @@
                 <div class="card">
                     <h3>View Connected Nodes</h3>
                     <p style="margin-bottom: 20px; color: #666;">List all nodes in the blockchain network</p>
-                    <button onclick="getNodes()">🌐 Get Nodes</button>
+                    <button onclick="getNodes()">Get Nodes</button>
                     <div id="nodesResponse"></div>
                 </div>
 
@@ -441,7 +440,7 @@
                         <label>Node Addresses (one per line)</label>
                         <textarea id="nodeAddresses" placeholder="http://127.0.0.1:5001&#10;http://127.0.0.1:5002"></textarea>
                     </div>
-                    <button onclick="connectNode()">🔗 Connect Nodes</button>
+                    <button onclick="connectNode()">Connect Nodes</button>
                     <div id="connectResponse"></div>
                 </div>
             </div>
@@ -451,21 +450,21 @@
                 <div class="card">
                     <h3>Validate Blockchain</h3>
                     <p style="margin-bottom: 20px; color: #666;">Verify the integrity of the entire blockchain</p>
-                    <button onclick="validateChain()">✅ Validate Chain</button>
+                    <button onclick="validateChain()">Validate Chain</button>
                     <div id="validateResponse"></div>
                 </div>
 
                 <div class="card">
                     <h3>Replace Chain (Consensus)</h3>
                     <p style="margin-bottom: 20px; color: #666;">Replace local chain with the longest valid chain from the network (deprecated)</p>
-                    <button onclick="replaceChain()" class="btn-secondary">🔄 Replace Chain</button>
+                    <button onclick="replaceChain()" class="btn-secondary">Replace Chain</button>
                     <div id="replaceResponse"></div>
                 </div>
 
                 <div class="card">
                     <h3>Apply Consensus</h3>
                     <p style="margin-bottom: 20px; color: #666;">Apply the longest chain rule across the network</p>
-                    <button onclick="applyConsensus()" class="btn-success">🤝 Apply Consensus</button>
+                    <button onclick="applyConsensus()" class="btn-success">Apply Consensus</button>
                     <div id="consensusResponse"></div>
                 </div>
             </div>
@@ -517,7 +516,6 @@
                 const element = document.getElementById('keysResponse');
                 element.innerHTML = `
                     <div class="response success">
-                        <h4>✅ Keys Generated Successfully</h4>
                         <div style="margin-top: 15px;">
                             <strong>Private Key:</strong>
                             <div class="key-display">${data.private_key}</div>
@@ -525,7 +523,7 @@
                             <div class="key-display">${data.public_key}</div>
                         </div>
                         <p style="margin-top: 15px; color: #f44336; font-weight: bold;">
-                            ⚠️ Save these keys securely! The private key cannot be recovered.
+                            Save these keys securely! The private key cannot be recovered.
                         </p>
                     </div>
                 `;
@@ -590,7 +588,7 @@
                     return;
                 }
 
-                displayResponse('addResponse', result, response.ok);
+                displayResponse('addResponse', result.message, response.ok);
             } catch (error) {
                 displayResponse('addResponse', { error: error.message }, false);
             }
@@ -616,7 +614,6 @@
                 const element = document.getElementById('mineResponse');
                 element.innerHTML = `
                     <div class="response success">
-                        <h4>⛏️ ${data.message}</h4>
                         <div class="block-info" style="margin-top: 15px;">
                             <div class="info-item">
                                 <div class="info-label">Block Index</div>
@@ -651,13 +648,13 @@
                                 <div class="info-value" style="font-size: 0.75em;">${data.previous_hash}</div>
                             </div>
                         </div>
-                        ${data.transactions.length > 0 ? `
+                         ${data.transactions.length > 0 ? `
                             <div style="margin-top: 20px;">
                                 <strong>Transactions:</strong>
                                 ${data.transactions.map(tx => `
                                     <div class="transaction-item" style="margin-top: 10px;">
-                                        <div><strong>From:</strong> ${tx.sender}</div>
-                                        <div><strong>To:</strong> ${tx.receiver}</div>
+                                        <div><strong>From:</strong> ${tx.sender_address}</div>
+                                        <div><strong>To:</strong> ${tx.receiver_address}</div>
                                         <div><strong>Amount:</strong> ${tx.amount}</div>
                                         <div><strong>Nonce:</strong> ${tx.nonce}</div>
                                     </div>
@@ -715,13 +712,13 @@
                                             <div class="info-value" style="font-size: 0.8em;">${block.previous_hash}</div>
                                         </div>
                                     </div>
-                                    ${block.transactions.length > 0 ? `
+                                     ${block.transactions.length > 0 ? `
                                         <div style="margin-top: 15px;">
                                             <strong style="color: #667eea;">Transactions:</strong>
                                             ${block.transactions.map(tx => `
                                                 <div class="transaction-item" style="margin-top: 8px;">
-                                                    <div><strong>From:</strong> ${tx.sender}</div>
-                                                    <div><strong>To:</strong> ${tx.receiver}</div>
+                                                    <div><strong>From:</strong> ${tx.sender_address}</div>
+                                                    <div><strong>To:</strong> ${tx.receiver_address}</div>
                                                     <div><strong>Amount:</strong> ${tx.amount}</div>
                                                     <div><strong>Nonce:</strong> ${tx.nonce}</div>
                                                 </div>

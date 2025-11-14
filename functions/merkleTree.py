@@ -46,7 +46,6 @@ class MerkleTree:
             index //= 2
         return proof
 
-    @staticmethod
     def verify_proof(tx_hash: str, proof: List[Dict[str, str]], root: str) -> bool:
         result = tx_hash
         for step in proof:

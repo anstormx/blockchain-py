@@ -6,7 +6,7 @@ import time
 from urllib.parse import urlparse
 import logging
 from cryptoUtilsV2 import verify_signature
-from merkleTree import MerkleTree
+from merkleTreeV2 import MerkleTree
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -29,7 +29,6 @@ class Blockchain:
         
         self.port = port
         self.node_address = self.get_node_address()
-        self.create_block(previous_hash='0', nonce=0, block_time=0, difficulty=self.difficulty)
 
     def load_nodes_from_file(self):
         try:
@@ -53,15 +52,12 @@ class Blockchain:
         except Exception as e:
             logging.error(f"Failed to add node {address}: {str(e)}")
 
-    def mine_block(self, miner_address=None):
-        if miner_address is None:
-            miner_address = self.node_address
-        
+    def mine_block(self, miner_address):
         previous_block = self.get_previous_block()
-        nonce, block_time, difficulty = self.proof_of_work(previous_block['nonce'])
+        nonce, block_time, difficulty = self.proof_of_work(previous_block['nonce'] if previous_block else 0)
         previous_hash = self.hash(previous_block)
         
-        coinbase_tx = self.create_coinbase_transaction(miner_address=miner_address)
+        coinbase_tx = self.create_coinbase_transaction(miner_address)
         
         # Create block with coinbase transaction
         block = self.create_block(previous_hash, nonce, block_time, difficulty, coinbase_tx)
@@ -102,13 +98,13 @@ class Blockchain:
         else:
             all_transactions = self.pending_transactions
         
-        merkletree = MerkleTree(all_transactions)
+        merkle_tree = MerkleTree(all_transactions)
         block = {
             'index': len(self.chain) + 1,
             'timestamp': str(datetime.datetime.now()),
             'previous_hash': previous_hash,
             'transactions': all_transactions,
-            'merkleroot': merkletree.get_root(),
+            'merkleroot': merkle_tree.get_root(),
             'difficulty': difficulty,
             'nonce': nonce,
             'block_time': block_time,
@@ -196,17 +192,16 @@ class Blockchain:
         block_reward = self.calculate_block_reward(block_height)
         
         coinbase_tx = {
-            'sender': 'coinbase',
-            'receiver': miner_address,
+            'sender_address': 'coinbase',
+            'receiver_address': miner_address,
             'amount': block_reward,
             'nonce': block_height - 1,
             'signature': None,  # No signature needed for coinbase
-            'public_key': None  # No public key needed
         }
 
         return coinbase_tx
 
-    def add_transaction(self, sender_address, receiver_address, amount, signature, nonce=0):
+    def add_transaction(self, sender_address, receiver_address, amount, signature, nonce):
         transaction = {
             'sender_address': sender_address,
             'receiver_address': receiver_address,
@@ -216,36 +211,41 @@ class Blockchain:
 
         transaction_data = json.dumps(transaction, sort_keys=True).encode()
 
-        if verify_signature(sender_address, transaction_data, signature):
-            if self.is_valid_nonce(sender_address, nonce):
-                transaction['signature'] = signature
-
-                self.pending_transactions.append(transaction)
-
-                transaction_str = json.dumps(transaction, sort_keys=True)
-                self.transaction_pool.add(transaction_str)
-
-                self.broadcast_transaction(transaction)  # Broadcast the transaction to other nodes
-
-                return len(self.chain) + 1
-            else:
-                print('Invalid nonce')
-                return False
-        else:
+        if not verify_signature(sender_address, transaction_data, signature):
             print('Signature verification failed')
-            return False 
+            return {'success': False, 'error': 'Signature verification failed'}
 
-    def is_valid_nonce(self, sender, nonce):
-        if sender not in self.nonces:
+        if not self.is_valid_nonce(sender_address, nonce):
+            print('Invalid nonce')
+            expected_nonce = self.nonces.get(sender_address, -1) + 1
+            return {'success': False, 'error': f'Invalid nonce. Expected nonce: {expected_nonce}, got: {nonce}'}
+
+        transaction['signature'] = signature
+
+        # Check for duplicates before adding
+        transaction_str = json.dumps(transaction, sort_keys=True)
+        if transaction_str in self.transaction_pool:
+            print('Transaction already in pool')
+            return {'success': False, 'error': 'Transaction already exists in pool'}
+
+        self.pending_transactions.append(transaction)
+        self.transaction_pool.add(transaction_str)
+
+        self.broadcast_transaction(transaction)  # Broadcast the transaction to other nodes
+
+        return {'success': True, 'block_index': len(self.chain) + 1} 
+
+    def is_valid_nonce(self, sender_address, nonce):
+        if sender_address not in self.nonces:
             if nonce != 0:
                 return False
             return True # First transaction
-        return nonce > self.nonces[sender]
+        return nonce > self.nonces[sender_address]
     
     def update_nonces_from_block(self, block):
         """Update nonces based on transactions in a confirmed block."""
         for transaction in block['transactions']:
-            self.nonces[transaction['sender']] = transaction['nonce']
+            self.nonces[transaction['sender_address']] = transaction['nonce']
     
     def rebuild_nonces(self):
         """Rebuild nonces from the entire blockchain (used after consensus)."""
@@ -295,32 +295,32 @@ class Blockchain:
 
             for transaction in block['transactions']:
                 # Skip validation for coinbase transactions (they don't have signatures)
-                if transaction.get('sender') == 'coinbase':
+                if transaction.get('sender_address') == 'coinbase':
                     continue
                 
                 # Validate regular transactions
                 transaction_data = json.dumps({
-                    'sender': transaction['sender'],
-                    'receiver': transaction['receiver'],
+                    'sender_address': transaction['sender_address'],
+                    'receiver_address': transaction['receiver_address'],
                     'amount': transaction['amount'],
                     'nonce': transaction['nonce']
                 }, sort_keys=True).encode()
 
-                if not verify_signature(transaction['public_key'], transaction_data, transaction['signature']):
+                if not verify_signature(transaction['sender_address'], transaction_data, transaction['signature']):
                     print('Invalid transaction signature')
                     return False
 
-                if transaction['sender'] not in address_nonces:
+                if transaction['sender_address'] not in address_nonces:
                     # First transaction
                     if transaction["nonce"] != 0:
                         print('Invalid nonce')
                         return False
-                    address_nonces[transaction['sender']] = transaction['nonce']
-                elif transaction['nonce'] <= address_nonces[transaction['sender']]:
+                    address_nonces[transaction['sender_address']] = transaction['nonce']
+                elif transaction['nonce'] <= address_nonces[transaction['sender_address']]:
                     print('Invalid nonce')
                     return False
                 else:
-                    address_nonces[transaction['sender']] = transaction['nonce']
+                    address_nonces[transaction['sender_address']] = transaction['nonce']
 
             previous_block = block
             block_index += 1

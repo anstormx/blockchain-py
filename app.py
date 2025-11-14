@@ -26,7 +26,6 @@ def mine_block_route():
 
     if block:
         response = {
-            'message': 'Congratulations, you just mined a block!',
             'index': block['index'],
             'timestamp': block['timestamp'],
             'previous_hash': block['previous_hash'],
@@ -80,7 +79,7 @@ def add_transaction_route():
         print('Invalid receiver address')
         return jsonify({'message': 'Invalid receiver address'}), 400
 
-    index = blockchain.add_transaction(
+    result = blockchain.add_transaction(
         add_transaction_json['sender'], 
         add_transaction_json['receiver'], 
         add_transaction_json['amount'],
@@ -88,13 +87,10 @@ def add_transaction_route():
         add_transaction_json['nonce']
     )
 
-    if index is False:
-        response = 'Invalid transaction'
+    if result['success']:
+        return jsonify({'message': f'Transaction will be added to Block {result["block_index"]}'}), 201
     else:
-        response = f'Transaction will be added to Block {index}'
-
-
-    return jsonify(response), 201
+        return jsonify({'message': result['error']}), 400
 
 @app.route('/sign_transaction', methods=['POST'])
 def sign_transaction_route():
@@ -122,11 +118,7 @@ def sign_transaction_route():
 
     signature = sign_transaction(private_key, transaction_data)
 
-    response = {
-        'signature': signature.hex()
-    }
-
-    return jsonify(response), 200
+    return jsonify({'signature': signature.hex()}), 200
 
 @app.route('/connect_node', methods=['POST'])
 def connect_node_route():
