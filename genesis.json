@@ -1,0 +1,7 @@
+{
+  "_comment": "Initial balance allocations. Replace with your actual compressed secp256k1 public keys.",
+  "allocations": {
+    "03cc7a7c21f92dbe8f4952ea127b174ef5f1facc711ad6d267b6762806d261fd3b": 100.0
+  },
+  "coinbase_address": "03cc7a7c21f92dbe8f4952ea127b174ef5f1facc711ad6d267b6762806d261fd3b"
+}

@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Blockchain Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,69 +14,83 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', system-ui, sans-serif;
+            background: #0f0f0f;
+            color: #f0f0f0;
             min-height: 100vh;
-            padding: 20px;
+            padding: 24px;
         }
 
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            background: #161616;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
             overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            text-align: center;
+            background: #161616;
+            border-bottom: 1px solid #2a2a2a;
+            padding: 20px 32px;
+            text-align: left;
         }
 
         .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 1em;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            color: #f0f0f0;
         }
 
         .header p {
-            font-size: 1.1em;
-            opacity: 0.9;
+            font-size: 0.78em;
+            color: #6b6b6b;
+            margin-top: 3px;
         }
 
         .tabs {
             display: flex;
-            background: #f7f7f7;
-            border-bottom: 2px solid #e0e0e0;
+            background: #161616;
+            border-bottom: 1px solid #2a2a2a;
             overflow-x: auto;
+            scrollbar-width: none;
+        }
+
+        .tabs::-webkit-scrollbar {
+            display: none;
         }
 
         .tab {
-            padding: 15px 25px;
+            padding: 13px 18px;
             cursor: pointer;
             border: none;
             background: transparent;
-            font-size: 1em;
-            color: #666;
-            transition: all 0.3s;
+            font-size: 0.82em;
+            color: #6b6b6b;
+            transition: color 0.15s, background 0.15s;
             white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 400;
+            margin-bottom: -1px;
         }
 
         .tab:hover {
-            background: #e0e0e0;
+            color: #c0c0c0;
+            background: rgba(255, 255, 255, 0.03);
         }
 
         .tab.active {
-            background: white;
-            color: #667eea;
-            font-weight: bold;
-            border-bottom: 3px solid #667eea;
+            color: #f0f0f0;
+            font-weight: 500;
+            border-bottom: 2px solid #4f8ef7;
+            background: transparent;
         }
 
         .content {
-            padding: 30px;
+            padding: 28px 32px;
         }
 
         .tab-content {
@@ -83,105 +99,126 @@
 
         .tab-content.active {
             display: block;
-            animation: fadeIn 0.3s;
+            animation: fadeIn 0.2s;
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
         .card {
-            background: #f9f9f9;
-            border-radius: 10px;
-            padding: 25px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 24px;
             margin-bottom: 20px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         .card h3 {
-            color: #667eea;
+            color: #f0f0f0;
+            font-size: 0.9em;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            margin-bottom: 16px;
+        }
+
+        .card > p {
+            font-size: 0.8em;
+            color: #6b6b6b;
             margin-bottom: 20px;
-            font-size: 1.5em;
+            margin-top: -8px;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
 
         label {
             display: block;
-            margin-bottom: 8px;
-            color: #333;
+            margin-bottom: 6px;
+            color: #6b6b6b;
             font-weight: 500;
+            font-size: 0.72em;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
         }
 
-        input, textarea {
+        input, textarea, select {
             width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1em;
-            transition: border 0.3s;
+            padding: 9px 11px;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
+            font-size: 0.875em;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            background: #111;
+            color: #f0f0f0;
+            font-family: 'Inter', system-ui, sans-serif;
         }
 
-        input:focus, textarea:focus {
+        input:focus, textarea:focus, select:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #4f8ef7;
+            box-shadow: 0 0 0 3px rgba(79, 142, 247, 0.12);
         }
 
         textarea {
             resize: vertical;
             min-height: 80px;
-            font-family: monospace;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82em;
         }
 
         button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #4f8ef7;
+            color: #fff;
             border: none;
-            padding: 12px 30px;
-            border-radius: 8px;
-            font-size: 1em;
+            padding: 9px 18px;
+            border-radius: 6px;
+            font-size: 0.82em;
+            font-weight: 500;
             cursor: pointer;
-            transition: all 0.3s;
-            margin-right: 10px;
-            margin-bottom: 10px;
+            transition: background 0.15s;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            font-family: 'Inter', system-ui, sans-serif;
         }
 
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
-        }
+        button:hover { background: #3a7de8; }
+        button:active { background: #2d6dd0; }
 
-        button:active {
-            transform: translateY(0);
-        }
+        .btn-secondary { background: #252525; color: #d0d0d0; }
+        .btn-secondary:hover { background: #2e2e2e; }
+
+        .btn-success { background: #14532d; color: #86efac; }
+        .btn-success:hover { background: #166534; }
 
         .response {
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 8px;
-            background: white;
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 6px;
+            background: #111;
+            border: 1px solid #2a2a2a;
             max-height: 500px;
             overflow-y: auto;
         }
 
         .response.success {
-            border-left-color: #4caf50;
-            background: #f1f8f4;
+            border-left: 3px solid #22c55e;
+            background: #0c1a10;
         }
 
         .response.error {
-            border-left-color: #f44336;
-            background: #fef1f0;
+            border-left: 3px solid #ef4444;
+            background: #1a0c0c;
         }
 
         .response pre {
             white-space: pre-wrap;
             word-wrap: break-word;
-            font-family: monospace;
-            font-size: 0.9em;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8em;
+            color: #c0c0c0;
         }
 
         .grid {
@@ -191,114 +228,122 @@
         }
 
         .key-display {
-            background: #2c3e50;
-            color: #ecf0f1;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: monospace;
-            font-size: 0.85em;
+            background: #111;
+            color: #86efac;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78em;
             word-wrap: break-word;
-            margin-top: 10px;
+            margin-top: 8px;
+            border: 1px solid #2a2a2a;
         }
 
         .block {
-            background: white;
-            border: 2px solid #667eea;
-            border-radius: 10px;
-            padding: 20px;
-            margin-bottom: 15px;
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 18px;
+            margin-bottom: 12px;
         }
 
         .block-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 14px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #e0e0e0;
+            border-bottom: 1px solid #2a2a2a;
         }
 
         .block-index {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #667eea;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #4f8ef7;
         }
 
         .block-info {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 10px;
         }
 
         .info-item {
             padding: 10px;
-            background: #f9f9f9;
-            border-radius: 5px;
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 6px;
         }
 
         .info-label {
-            font-weight: bold;
-            color: #666;
-            font-size: 0.85em;
-            margin-bottom: 5px;
+            font-weight: 500;
+            color: #6b6b6b;
+            font-size: 0.7em;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 4px;
         }
 
         .info-value {
-            color: #333;
+            color: #d0d0d0;
             word-break: break-all;
-            font-size: 0.9em;
+            font-size: 0.82em;
+            font-family: 'JetBrains Mono', monospace;
         }
 
         .loading {
             text-align: center;
             padding: 20px;
-            color: #667eea;
+            color: #6b6b6b;
         }
 
         .spinner {
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
+            border: 2px solid #2a2a2a;
+            border-top: 2px solid #4f8ef7;
             border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+            margin: 16px auto;
         }
 
+        .loading p { font-size: 0.8em; color: #6b6b6b; margin-top: 8px; }
+
         @keyframes spin {
-            0% { transform: rotate(0deg); }
+            0%   { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
 
-        .node-list {
-            list-style: none;
-            padding: 0;
-        }
+        .node-list { list-style: none; padding: 0; }
 
         .node-item {
-            padding: 12px;
-            background: white;
-            margin-bottom: 10px;
-            border-radius: 8px;
+            padding: 10px 12px;
+            background: #111;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            border: 1px solid #2a2a2a;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82em;
+            color: #c0c0c0;
         }
 
-        .btn-secondary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        .btn-success {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-        }
-
-        .hidden {
-            display: none;
-        }
+        .hidden { display: none; }
 
         .transaction-item {
-            background: white;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 10px;
+            background: #111;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid #2a2a2a;
+            font-size: 0.82em;
+            color: #b0b0b0;
+        }
+
+        .transaction-item strong {
+            color: #6b6b6b;
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .two-column {
@@ -308,37 +353,101 @@
         }
 
         @media (max-width: 768px) {
-            .two-column {
-                grid-template-columns: 1fr;
-            }
-            
-            .tabs {
-                flex-wrap: wrap;
-            }
+            .two-column { grid-template-columns: 1fr; }
+            .tabs { flex-wrap: wrap; }
+            .content { padding: 20px; }
+            .header { padding: 16px 20px; }
+        }
+
+        .account-card {
+            background: #111;
+            border: 1px solid #2a2a2a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 10px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.72em;
+            font-weight: 600;
+            margin-left: 8px;
+            letter-spacing: 0.04em;
+        }
+
+        .badge-eoa      { background: rgba(79,142,247,0.12); color: #4f8ef7;  border: 1px solid rgba(79,142,247,0.2); }
+        .badge-contract { background: rgba(168,85,247,0.12); color: #a855f7;  border: 1px solid rgba(168,85,247,0.2); }
+        .badge-success  { background: rgba(34,197,94,0.12);  color: #22c55e;  border: 1px solid rgba(34,197,94,0.2); }
+        .badge-failed   { background: rgba(239,68,68,0.12);  color: #ef4444;  border: 1px solid rgba(239,68,68,0.2); }
+
+        .gas-bar-wrap {
+            background: #2a2a2a;
+            border-radius: 3px;
+            height: 4px;
+            margin-top: 4px;
+            overflow: hidden;
+        }
+
+        .gas-bar-fill {
+            height: 100%;
+            background: #4f8ef7;
+            border-radius: 3px;
+            transition: width 0.4s;
+        }
+
+        .mempool-item {
+            background: #1a1a1a;
+            border: 1px solid #2a2a2a;
+            border-left: 3px solid #4f8ef7;
+            border-radius: 0 6px 6px 0;
+            padding: 12px 16px;
+            margin-bottom: 10px;
+        }
+
+        .gas-price-tag {
+            float: right;
+            background: rgba(234,179,8,0.1);
+            color: #eab308;
+            border: 1px solid rgba(234,179,8,0.2);
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 0.72em;
+            font-weight: 600;
+        }
+
+        select option {
+            background: #1a1a1a;
+            color: #f0f0f0;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>⛓️ Blockchain Dashboard</h1>
+            <h1>Blockchain Dashboard</h1>
+            <p>Python · secp256k1 · Proof of Work</p>
         </div>
 
         <div class="tabs">
-            <button class="tab active" onclick="showTab('keys')">Generate Keys</button>
-            <button class="tab" onclick="showTab('transactions')">Sign or Add Transactions</button>
-            <button class="tab" onclick="showTab('mining')">Mine Block</button>
-            <button class="tab" onclick="showTab('blockchain')">View Blockchain</button>
-            <button class="tab" onclick="showTab('nodes')">View Connected Nodes</button>
-            <button class="tab" onclick="showTab('validation')">Validate Blockchain</button>
+            <button class="tab active" onclick="showTab('keys')">Keys</button>
+            <button class="tab" onclick="showTab('transactions')">Transactions</button>
+            <button class="tab" onclick="showTab('mining')">Mine</button>
+            <button class="tab" onclick="showTab('blockchain')">Explorer</button>
+            <button class="tab" onclick="showTab('nodes')">Nodes</button>
+            <button class="tab" onclick="showTab('validation')">Validate</button>
+            <button class="tab" onclick="showTab('accounts')">Accounts</button>
+            <button class="tab" onclick="showTab('mempool')">Mempool</button>
         </div>
 
         <div class="content">
             <!-- Keys Tab -->
             <div id="keys" class="tab-content active">
                 <div class="card">
-                    <h3>Generate Public/Private Key Pair</h3>
-                    <button onclick="generateKeys()">Generate New Keys</button>
+                    <h3>Generate Key Pair</h3>
+                    <p>Generate a new secp256k1 keypair. Save the private key — it cannot be recovered.</p>
+                    <button onclick="generateKeys()">Generate</button>
                     <div id="keysResponse"></div>
                 </div>
             </div>
@@ -347,55 +456,65 @@
             <div id="transactions" class="tab-content">
                 <div class="card">
                     <h3>Sign Transaction</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Sign a transaction with your private key</p>
+                    <p>Sign a transaction with your private key before submitting.</p>
                     <div class="form-group">
                         <label>Sender Address</label>
-                        <input type="text" id="signSender" placeholder="Enter sender address" value="0322b9af9e48f7d4ab3ca11ade0c93b2bc1ca80abc20c97e96717bbff488002dc6">
+                        <input type="text" id="signSender" placeholder="Compressed pubkey (hex)" value="0322b9af9e48f7d4ab3ca11ade0c93b2bc1ca80abc20c97e96717bbff488002dc6">
                     </div>
                     <div class="form-group">
                         <label>Receiver Address</label>
-                        <input type="text" id="signReceiver" placeholder="Enter receiver address" value="03c116d12d88f3d32450c643ba706c7ff57dfdb3554078cff42c93535a5a592f23">
+                        <input type="text" id="signReceiver" placeholder="Compressed pubkey (hex)" value="03c116d12d88f3d32450c643ba706c7ff57dfdb3554078cff42c93535a5a592f23">
                     </div>
                     <div class="form-group">
                         <label>Amount</label>
-                        <input type="number" id="signAmount" placeholder="Enter amount" step="1" value="10">
+                        <input type="number" id="signAmount" placeholder="0" step="1" value="10">
                     </div>
                     <div class="form-group">
                         <label>Nonce</label>
-                        <input type="number" id="signNonce" placeholder="Enter nonce" step="1" value="0">
+                        <input type="number" id="signNonce" placeholder="0" step="1" value="0">
                     </div>
                     <div class="form-group">
                         <label>Private Key</label>
-                        <input type="text" id="signPrivateKey" placeholder="Paste your private key here" value="55a01033a18554123fc73f24c4a9cc6a82a7d6c1548a937daf7549521deff403">
+                        <input type="text" id="signPrivateKey" placeholder="Your private key (hex)" value="55a01033a18554123fc73f24c4a9cc6a82a7d6c1548a937daf7549521deff403">
                     </div>
-                    <button onclick="signTransaction()">Sign Transaction</button>
+                    <button onclick="signTransaction()">Sign</button>
                     <div id="signResponse"></div>
                 </div>
 
                 <div class="card">
-                    <h3>Add Transaction to Pool</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Submit a signed transaction to the blockchain</p>
+                    <h3>Submit Transaction</h3>
+                    <p>Submit a signed transaction to the mempool.</p>
                     <div class="form-group">
                         <label>Sender Address</label>
-                        <input type="text" id="addSender" placeholder="Enter sender address" value="0322b9af9e48f7d4ab3ca11ade0c93b2bc1ca80abc20c97e96717bbff488002dc6">
+                        <input type="text" id="addSender" placeholder="Compressed pubkey (hex)" value="0322b9af9e48f7d4ab3ca11ade0c93b2bc1ca80abc20c97e96717bbff488002dc6">
                     </div>
                     <div class="form-group">
                         <label>Receiver Address</label>
-                        <input type="text" id="addReceiver" placeholder="Enter receiver address" value="03c116d12d88f3d32450c643ba706c7ff57dfdb3554078cff42c93535a5a592f23">
+                        <input type="text" id="addReceiver" placeholder="Compressed pubkey (hex)" value="03c116d12d88f3d32450c643ba706c7ff57dfdb3554078cff42c93535a5a592f23">
                     </div>
                     <div class="form-group">
                         <label>Amount</label>
-                        <input type="number" id="addAmount" placeholder="Enter amount" step="1" value="10">
+                        <input type="number" id="addAmount" placeholder="0" step="1" value="10">
                     </div>
                     <div class="form-group">
                         <label>Nonce</label>
-                        <input type="number" id="addNonce" placeholder="Enter nonce" step="1" value="0">
+                        <input type="number" id="addNonce" placeholder="0" step="1" value="0">
                     </div>
                     <div class="form-group">
                         <label>Signature (hex)</label>
                         <input id="addSignature" placeholder="Paste transaction signature here">
                     </div>
-                    <button onclick="addTransaction()">Add Transaction</button>
+                    <div class="two-column">
+                        <div class="form-group">
+                            <label>Gas Price</label>
+                            <input type="number" id="addGasPrice" placeholder="0.00001" step="0.000001" min="0" value="0.00001">
+                        </div>
+                        <div class="form-group">
+                            <label>Gas Limit</label>
+                            <input type="number" id="addGasLimit" placeholder="21000" min="21000" value="21000">
+                        </div>
+                    </div>
+                    <button onclick="addTransaction()">Submit</button>
                     <div id="addResponse"></div>
                 </div>
             </div>
@@ -403,13 +522,13 @@
             <!-- Mining Tab -->
             <div id="mining" class="tab-content">
                 <div class="card">
-                    <h3>Mine New Block</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Mine pending transactions into a new block using Proof of Work</p>
+                    <h3>Mine Block</h3>
+                    <p>Mine pending transactions into a new block using Proof of Work.</p>
                     <div class="form-group">
                         <label>Miner Address</label>
-                        <input type="text" id="mineMinerAddress" placeholder="Enter miner address" value="03cc7a7c21f92dbe8f4952ea127b174ef5f1facc711ad6d267b6762806d261fd3b">
+                        <input type="text" id="mineMinerAddress" placeholder="Compressed pubkey (hex)" value="03cc7a7c21f92dbe8f4952ea127b174ef5f1facc711ad6d267b6762806d261fd3b">
                     </div>
-                    <button onclick="mineBlock()">Mine Block</button>
+                    <button onclick="mineBlock()">Mine</button>
                     <div id="mineResponse"></div>
                 </div>
             </div>
@@ -417,9 +536,9 @@
             <!-- Blockchain Tab -->
             <div id="blockchain" class="tab-content">
                 <div class="card">
-                    <h3>View Blockchain</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Display the complete blockchain with all blocks and transactions</p>
-                    <button onclick="getChain()">Get Blockchain</button>
+                    <h3>Block Explorer</h3>
+                    <p>All blocks and transactions on this node.</p>
+                    <button onclick="getChain()">Load Chain</button>
                     <div id="chainResponse"></div>
                 </div>
             </div>
@@ -427,20 +546,20 @@
             <!-- Nodes Tab -->
             <div id="nodes" class="tab-content">
                 <div class="card">
-                    <h3>View Connected Nodes</h3>
-                    <p style="margin-bottom: 20px; color: #666;">List all nodes in the blockchain network</p>
-                    <button onclick="getNodes()">Get Nodes</button>
+                    <h3>Connected Nodes</h3>
+                    <p>All peers in the network.</p>
+                    <button onclick="getNodes()">Refresh</button>
                     <div id="nodesResponse"></div>
                 </div>
 
                 <div class="card">
-                    <h3>Connect New Node</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Add a new node to the network (format: http://127.0.0.1:5001)</p>
+                    <h3>Add Node</h3>
+                    <p>Register a peer (format: http://127.0.0.1:5001).</p>
                     <div class="form-group">
                         <label>Node Addresses (one per line)</label>
                         <textarea id="nodeAddresses" placeholder="http://127.0.0.1:5001&#10;http://127.0.0.1:5002"></textarea>
                     </div>
-                    <button onclick="connectNode()">Connect Nodes</button>
+                    <button onclick="connectNode()">Connect</button>
                     <div id="connectResponse"></div>
                 </div>
             </div>
@@ -448,24 +567,57 @@
             <!-- Validation Tab -->
             <div id="validation" class="tab-content">
                 <div class="card">
-                    <h3>Validate Blockchain</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Verify the integrity of the entire blockchain</p>
-                    <button onclick="validateChain()">Validate Chain</button>
+                    <h3>Validate Chain</h3>
+                    <p>Verify the cryptographic integrity of every block and transaction.</p>
+                    <button onclick="validateChain()">Validate</button>
                     <div id="validateResponse"></div>
                 </div>
 
                 <div class="card">
-                    <h3>Replace Chain (Consensus)</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Replace local chain with the longest valid chain from the network (deprecated)</p>
-                    <button onclick="replaceChain()" class="btn-secondary">Replace Chain</button>
+                    <h3>Replace Chain</h3>
+                    <p>Replace local chain with the longest valid chain from the network (deprecated).</p>
+                    <button onclick="replaceChain()" class="btn-secondary">Replace</button>
                     <div id="replaceResponse"></div>
                 </div>
 
                 <div class="card">
                     <h3>Apply Consensus</h3>
-                    <p style="margin-bottom: 20px; color: #666;">Apply the longest chain rule across the network</p>
+                    <p>Run the longest-chain rule across all known peers.</p>
                     <button onclick="applyConsensus()" class="btn-success">Apply Consensus</button>
                     <div id="consensusResponse"></div>
+                </div>
+            </div>
+
+            <!-- Accounts Tab -->
+            <div id="accounts" class="tab-content">
+                <div class="two-column">
+                    <div class="card">
+                        <h3>Account Lookup</h3>
+                        <p>Query balance, nonce, and type for any address.</p>
+                        <div class="form-group">
+                            <label>Address</label>
+                            <input type="text" id="accountAddr" placeholder="Compressed pubkey (hex)">
+                        </div>
+                        <button onclick="lookupAccount()">Lookup</button>
+                        <div id="accountResponse"></div>
+                    </div>
+
+                    <div class="card">
+                        <h3>All Accounts</h3>
+                        <p>All accounts sorted by balance.</p>
+                        <button onclick="getAllAccounts()">Load</button>
+                        <div id="allAccountsResponse"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mempool Tab -->
+            <div id="mempool" class="tab-content">
+                <div class="card">
+                    <h3>Pending Transactions</h3>
+                    <p>Transactions waiting to be mined, ordered by gas price descending.</p>
+                    <button onclick="getMempool()">Refresh</button>
+                    <div id="mempoolResponse"></div>
                 </div>
             </div>
         </div>
@@ -474,65 +626,56 @@
     <script>
         const API_BASE = window.location.origin;
 
-        // Tab switching
+        function truncateHash(h, head = 10, tail = 6) {
+            if (!h || h.length <= head + tail + 3) return h;
+            return h.slice(0, head) + '...' + h.slice(-tail);
+        }
+
         function showTab(tabName) {
-            const tabs = document.querySelectorAll('.tab');
-            const contents = document.querySelectorAll('.tab-content');
-            
-            tabs.forEach(tab => tab.classList.remove('active'));
-            contents.forEach(content => content.classList.remove('active'));
-            
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             event.target.classList.add('active');
             document.getElementById(tabName).classList.add('active');
         }
 
-        // Helper function to display responses
         function displayResponse(elementId, data, isSuccess = true) {
             const element = document.getElementById(elementId);
             element.innerHTML = '';
-            
             const responseDiv = document.createElement('div');
             responseDiv.className = `response ${isSuccess ? 'success' : 'error'}`;
-            
             const pre = document.createElement('pre');
             pre.textContent = JSON.stringify(data, null, 2);
             responseDiv.appendChild(pre);
-            
             element.appendChild(responseDiv);
         }
 
         function showLoading(elementId) {
-            const element = document.getElementById(elementId);
-            element.innerHTML = '<div class="loading"><div class="spinner"></div><p>Processing...</p></div>';
+            document.getElementById(elementId).innerHTML =
+                '<div class="loading"><div class="spinner"></div><p>Processing...</p></div>';
         }
 
-        // Generate Keys
         async function generateKeys() {
             showLoading('keysResponse');
             try {
                 const response = await fetch(`${API_BASE}/generate_keys`);
                 const data = await response.json();
-                
-                const element = document.getElementById('keysResponse');
-                element.innerHTML = `
+                document.getElementById('keysResponse').innerHTML = `
                     <div class="response success">
-                        <div style="margin-top: 15px;">
-                            <strong>Private Key:</strong>
+                        <div style="margin-top: 12px;">
+                            <label style="display:block;margin-bottom:4px;">Private Key</label>
                             <div class="key-display">${data.private_key}</div>
-                            <strong style="margin-top: 15px; display: block;">Public Key:</strong>
+                            <label style="display:block;margin-top:14px;margin-bottom:4px;">Public Key / Address</label>
                             <div class="key-display">${data.public_key}</div>
                         </div>
-                        <p style="margin-top: 15px; color: #f44336; font-weight: bold;">
-                            Save these keys securely! The private key cannot be recovered.
+                        <p style="margin-top:14px;color:#ef4444;font-size:0.78em;font-weight:500;">
+                            Store your private key securely. It cannot be recovered.
                         </p>
-                    </div>
-                `;
+                    </div>`;
             } catch (error) {
                 displayResponse('keysResponse', { error: error.message }, false);
             }
         }
 
-        // Sign Transaction
         async function signTransaction() {
             showLoading('signResponse');
             const data = {
@@ -542,7 +685,6 @@
                 nonce: parseInt(document.getElementById('signNonce').value),
                 private_key: document.getElementById('signPrivateKey').value
             };
-
             try {
                 const response = await fetch(`${API_BASE}/sign_transaction`, {
                     method: 'POST',
@@ -550,20 +692,13 @@
                     body: JSON.stringify(data)
                 });
                 const result = await response.json();
-                
-                // Check if response is an error
-                if (!response.ok) {
-                    displayResponse('signResponse', result.message, false);
-                    return;
-                }
-                
+                if (!response.ok) { displayResponse('signResponse', result.message, false); return; }
                 displayResponse('signResponse', result.signature, response.ok);
             } catch (error) {
                 displayResponse('signResponse', { error: error.message }, false);
             }
         }
 
-        // Add Transaction
         async function addTransaction() {
             showLoading('addResponse');
             const data = {
@@ -572,8 +707,9 @@
                 amount: parseFloat(document.getElementById('addAmount').value),
                 nonce: parseInt(document.getElementById('addNonce').value),
                 signature: document.getElementById('addSignature').value,
+                gas_price: parseFloat(document.getElementById('addGasPrice').value) || 0.00001,
+                gas_limit: parseInt(document.getElementById('addGasLimit').value) || 21000,
             };
-
             try {
                 const response = await fetch(`${API_BASE}/add_transaction`, {
                     method: 'POST',
@@ -581,20 +717,13 @@
                     body: JSON.stringify(data)
                 });
                 const result = await response.json();
-
-                // Check if response is an error
-                if (!response.ok) {
-                    displayResponse('addResponse', result.message, false);
-                    return;
-                }
-
+                if (!response.ok) { displayResponse('addResponse', result.message, false); return; }
                 displayResponse('addResponse', result.message, response.ok);
             } catch (error) {
                 displayResponse('addResponse', { error: error.message }, false);
             }
         }
 
-        // Mine Block
         async function mineBlock() {
             showLoading('mineResponse');
             try {
@@ -604,174 +733,99 @@
                     body: JSON.stringify({ miner_address: document.getElementById('mineMinerAddress').value })
                 });
                 const data = await response.json();
-                
-                // Check if response is an error (string response or non-200 status)
-                if (!response.ok) {
-                    displayResponse('mineResponse', data.message || 'Error mining block', false);
-                    return;
-                }
-                
-                const element = document.getElementById('mineResponse');
-                element.innerHTML = `
+                if (!response.ok) { displayResponse('mineResponse', data.message || 'Error mining block', false); return; }
+
+                document.getElementById('mineResponse').innerHTML = `
                     <div class="response success">
-                        <div class="block-info" style="margin-top: 15px;">
-                            <div class="info-item">
-                                <div class="info-label">Block Index</div>
-                                <div class="info-value">${data.index}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Timestamp</div>
-                                <div class="info-value">${data.timestamp}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Nonce</div>
-                                <div class="info-value">${data.nonce}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Difficulty</div>
-                                <div class="info-value">${data.difficulty}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Block Time</div>
-                                <div class="info-value">${data.block_time.toFixed(2)}s</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Transactions</div>
-                                <div class="info-value">${data.transaction_count}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Merkle Root</div>
-                                <div class="info-value" style="font-size: 0.75em;">${data.merkle_root}</div>
-                            </div>
-                            <div class="info-item">
-                                <div class="info-label">Previous Hash</div>
-                                <div class="info-value" style="font-size: 0.75em;">${data.previous_hash}</div>
-                            </div>
+                        <div class="block-info" style="margin-top:12px;">
+                            <div class="info-item"><div class="info-label">Block</div><div class="info-value">#${data.index}</div></div>
+                            <div class="info-item"><div class="info-label">Timestamp</div><div class="info-value">${data.timestamp}</div></div>
+                            <div class="info-item"><div class="info-label">Nonce</div><div class="info-value">${data.nonce}</div></div>
+                            <div class="info-item"><div class="info-label">Difficulty</div><div class="info-value">${data.difficulty}</div></div>
+                            <div class="info-item"><div class="info-label">Block Time</div><div class="info-value">${data.block_time.toFixed(2)}s</div></div>
+                            <div class="info-item"><div class="info-label">Transactions</div><div class="info-value">${data.transaction_count}</div></div>
+                            <div class="info-item" style="grid-column:1/-1;"><div class="info-label">Merkle Root</div><div class="info-value">${data.merkle_root}</div></div>
+                            <div class="info-item" style="grid-column:1/-1;"><div class="info-label">Previous Hash</div><div class="info-value">${data.previous_hash}</div></div>
                         </div>
-                         ${data.transactions.length > 0 ? `
-                            <div style="margin-top: 20px;">
-                                <strong>Transactions:</strong>
+                        ${data.transactions.length > 0 ? `
+                            <div style="margin-top:16px;">
+                                <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.06em;color:#6b6b6b;margin-bottom:8px;">Transactions</div>
                                 ${data.transactions.map(tx => `
-                                    <div class="transaction-item" style="margin-top: 10px;">
-                                        <div><strong>From:</strong> ${tx.sender_address}</div>
-                                        <div><strong>To:</strong> ${tx.receiver_address}</div>
-                                        <div><strong>Amount:</strong> ${tx.amount}</div>
-                                        <div><strong>Nonce:</strong> ${tx.nonce}</div>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        ` : '<p style="margin-top: 15px; color: #666;">No transactions in this block</p>'}
-                    </div>
-                `;
+                                    <div class="transaction-item">
+                                        <div><strong>From</strong> <span style="font-family:'JetBrains Mono',monospace;" title="${tx.sender_address}">${truncateHash(tx.sender_address)}</span></div>
+                                        <div><strong>To</strong> <span style="font-family:'JetBrains Mono',monospace;" title="${tx.receiver_address}">${truncateHash(tx.receiver_address)}</span></div>
+                                        <div><strong>Amount</strong> ${tx.amount} &nbsp; <strong>Nonce</strong> ${tx.nonce}</div>
+                                    </div>`).join('')}
+                            </div>` : '<p style="margin-top:12px;color:#6b6b6b;font-size:0.82em;">No transactions in this block</p>'}
+                    </div>`;
             } catch (error) {
                 displayResponse('mineResponse', { error: error.message }, false);
             }
         }
 
-        // Get Chain
         async function getChain() {
             showLoading('chainResponse');
             try {
                 const response = await fetch(`${API_BASE}/get_chain`);
                 const data = await response.json();
-                
-                const element = document.getElementById('chainResponse');
-                element.innerHTML = `
+                document.getElementById('chainResponse').innerHTML = `
                     <div class="response success">
-                        <h4>📦 Blockchain (${data.length} blocks)</h4>
-                        <div style="margin-top: 20px;">
-                            ${data.chain.map(block => `
-                                <div class="block">
-                                    <div class="block-header">
-                                        <span class="block-index">Block #${block.index}</span>
-                                        <span style="color: #666; font-size: 0.9em;">${block.timestamp}</span>
-                                    </div>
-                                    <div class="block-info">
-                                        <div class="info-item">
-                                            <div class="info-label">Nonce</div>
-                                            <div class="info-value">${block.nonce}</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Difficulty</div>
-                                            <div class="info-value">${block.difficulty}</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Block Time</div>
-                                            <div class="info-value">${block.block_time.toFixed(2) + 's'}</div>
-                                        </div>
-                                        <div class="info-item">
-                                            <div class="info-label">Transactions</div>
-                                            <div class="info-value">${block.transactions.length}</div>
-                                        </div>
-                                        <div class="info-item" style="grid-column: 1 / -1;">
-                                            <div class="info-label">Merkle Root</div>
-                                            <div class="info-value" style="font-size: 0.8em;">${block.merkleroot}</div>
-                                        </div>
-                                        <div class="info-item" style="grid-column: 1 / -1;">
-                                            <div class="info-label">Previous Hash</div>
-                                            <div class="info-value" style="font-size: 0.8em;">${block.previous_hash}</div>
-                                        </div>
-                                    </div>
-                                     ${block.transactions.length > 0 ? `
-                                        <div style="margin-top: 15px;">
-                                            <strong style="color: #667eea;">Transactions:</strong>
-                                            ${block.transactions.map(tx => `
-                                                <div class="transaction-item" style="margin-top: 8px;">
-                                                    <div><strong>From:</strong> ${tx.sender_address}</div>
-                                                    <div><strong>To:</strong> ${tx.receiver_address}</div>
-                                                    <div><strong>Amount:</strong> ${tx.amount}</div>
-                                                    <div><strong>Nonce:</strong> ${tx.nonce}</div>
-                                                </div>
-                                            `).join('')}
-                                        </div>
-                                    ` : ''}
-                                    ${block.uncles && block.uncles.length > 0 ? `
-                                        <div style="margin-top: 15px;">
-                                            <strong style="color: #764ba2;">Uncle Blocks: ${block.uncles.length}</strong>
-                                        </div>
-                                    ` : ''}
+                        <div style="font-size:0.78em;color:#6b6b6b;margin-bottom:16px;">${data.length} block(s)</div>
+                        ${data.chain.map(block => `
+                            <div class="block">
+                                <div class="block-header">
+                                    <span class="block-index">Block #${block.index}</span>
+                                    <span style="color:#6b6b6b;font-size:0.78em;">${block.timestamp}</span>
                                 </div>
-                            `).join('')}
-                        </div>
-                    </div>
-                `;
+                                <div class="block-info">
+                                    <div class="info-item"><div class="info-label">Nonce</div><div class="info-value">${block.nonce}</div></div>
+                                    <div class="info-item"><div class="info-label">Difficulty</div><div class="info-value">${block.difficulty}</div></div>
+                                    <div class="info-item"><div class="info-label">Block Time</div><div class="info-value">${block.block_time.toFixed(2)}s</div></div>
+                                    <div class="info-item"><div class="info-label">Transactions</div><div class="info-value">${block.transactions.length}</div></div>
+                                    <div class="info-item" style="grid-column:1/-1;"><div class="info-label">Merkle Root</div><div class="info-value">${block.merkleroot}</div></div>
+                                    <div class="info-item" style="grid-column:1/-1;"><div class="info-label">Previous Hash</div><div class="info-value">${block.previous_hash}</div></div>
+                                </div>
+                                ${block.transactions.length > 0 ? `
+                                    <div style="margin-top:14px;">
+                                        <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.06em;color:#6b6b6b;margin-bottom:8px;">Transactions</div>
+                                        ${block.transactions.map(tx => `
+                                            <div class="transaction-item">
+                                                <div><strong>From</strong> <span style="font-family:'JetBrains Mono',monospace;" title="${tx.sender_address}">${truncateHash(tx.sender_address)}</span></div>
+                                                <div><strong>To</strong> <span style="font-family:'JetBrains Mono',monospace;" title="${tx.receiver_address}">${truncateHash(tx.receiver_address)}</span></div>
+                                                <div><strong>Amount</strong> ${tx.amount} &nbsp; <strong>Nonce</strong> ${tx.nonce}</div>
+                                            </div>`).join('')}
+                                    </div>` : ''}
+                                ${block.uncles && block.uncles.length > 0 ? `
+                                    <div style="margin-top:12px;font-size:0.78em;color:#6b6b6b;">Uncles included: ${block.uncles.length}</div>` : ''}
+                            </div>`).join('')}
+                    </div>`;
             } catch (error) {
                 displayResponse('chainResponse', { error: error.message }, false);
             }
         }
 
-        // Get Nodes
         async function getNodes() {
             showLoading('nodesResponse');
             try {
                 const response = await fetch(`${API_BASE}/get_nodes`);
                 const data = await response.json();
-                
-                const element = document.getElementById('nodesResponse');
-                element.innerHTML = `
+                document.getElementById('nodesResponse').innerHTML = `
                     <div class="response success">
-                        <h4>Connected Nodes (${data.total_nodes})</h4>
+                        <div style="font-size:0.78em;color:#6b6b6b;margin-bottom:12px;">${data.total_nodes} node(s)</div>
                         ${data.nodes.length > 0 ? `
-                            <ul class="node-list" style="margin-top: 15px;">
-                                ${data.nodes.map(node => `
-                                    <li class="node-item">${node}</li>
-                                `).join('')}
-                            </ul>
-                        ` : '<p style="margin-top: 15px; color: #666;">No nodes connected</p>'}
-                    </div>
-                `;
+                            <ul class="node-list">
+                                ${data.nodes.map(node => `<li class="node-item">${node}</li>`).join('')}
+                            </ul>` : '<p style="color:#6b6b6b;font-size:0.82em;">No nodes connected</p>'}
+                    </div>`;
             } catch (error) {
                 displayResponse('nodesResponse', { error: error.message }, false);
             }
         }
 
-        // Connect Node
         async function connectNode() {
             showLoading('connectResponse');
             const addresses = document.getElementById('nodeAddresses').value
-                .split('\n')
-                .filter(addr => addr.trim() !== '');
-
+                .split('\n').filter(a => a.trim() !== '');
             try {
                 const response = await fetch(`${API_BASE}/connect_node`, {
                     method: 'POST',
@@ -779,17 +833,12 @@
                     body: JSON.stringify({ nodes: addresses })
                 });
                 const data = await response.json();
-                if (response.ok) {
-                    displayResponse('connectResponse', data, true);
-                } else {
-                    displayResponse('connectResponse', data.message, false);
-                }
+                displayResponse('connectResponse', data, response.ok);
             } catch (error) {
                 displayResponse('connectResponse', { error: error.message }, false);
             }
         }
 
-        // Validate Chain
         async function validateChain() {
             showLoading('validateResponse');
             try {
@@ -801,7 +850,6 @@
             }
         }
 
-        // Replace Chain
         async function replaceChain() {
             showLoading('replaceResponse');
             try {
@@ -813,7 +861,6 @@
             }
         }
 
-        // Apply Consensus
         async function applyConsensus() {
             showLoading('consensusResponse');
             try {
@@ -825,11 +872,114 @@
             }
         }
 
-        // Auto-load chain on page load
+        async function lookupAccount() {
+            const addr = document.getElementById('accountAddr').value.trim();
+            if (!addr) { displayResponse('accountResponse', 'Enter an address', false); return; }
+            showLoading('accountResponse');
+            try {
+                const response = await fetch(`${API_BASE}/get_account/${encodeURIComponent(addr)}`);
+                const data = await response.json();
+                if (!response.ok) { displayResponse('accountResponse', data.message || data.error, false); return; }
+
+                const typeBadge = data.account_type === 1
+                    ? '<span class="badge badge-contract">CONTRACT</span>'
+                    : '<span class="badge badge-eoa">EOA</span>';
+
+                document.getElementById('accountResponse').innerHTML = `
+                    <div class="response success">
+                        <div class="account-card">
+                            <div style="word-break:break-all;font-family:'JetBrains Mono',monospace;font-size:0.78em;color:#86efac;margin-bottom:12px;">${data.address}</div>
+                            <div class="block-info">
+                                <div class="info-item"><div class="info-label">Balance</div><div class="info-value">${data.balance} CTK</div></div>
+                                <div class="info-item"><div class="info-label">Nonce</div><div class="info-value">${data.nonce}</div></div>
+                                <div class="info-item"><div class="info-label">Type</div><div class="info-value">${typeBadge}</div></div>
+                            </div>
+                        </div>
+                    </div>`;
+            } catch (error) {
+                displayResponse('accountResponse', { error: error.message }, false);
+            }
+        }
+
+        async function getAllAccounts() {
+            showLoading('allAccountsResponse');
+            try {
+                const response = await fetch(`${API_BASE}/get_all_accounts`);
+                const data = await response.json();
+                if (!response.ok) { displayResponse('allAccountsResponse', data.message || data.error, false); return; }
+
+                const accounts = data.accounts || [];
+                if (accounts.length === 0) {
+                    document.getElementById('allAccountsResponse').innerHTML =
+                        '<div class="response success"><p style="color:#6b6b6b;font-size:0.82em;">No accounts found</p></div>';
+                    return;
+                }
+
+                document.getElementById('allAccountsResponse').innerHTML = `
+                    <div class="response success">
+                        <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.06em;color:#6b6b6b;margin-bottom:12px;">${accounts.length} account(s)</div>
+                        ${accounts.map((a, i) => `
+                            <div class="account-card">
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                                    <span style="font-size:0.78em;color:#6b6b6b;">#${i + 1}</span>
+                                    ${a.account_type === 1
+                                        ? '<span class="badge badge-contract">CONTRACT</span>'
+                                        : '<span class="badge badge-eoa">EOA</span>'}
+                                </div>
+                                <div style="word-break:break-all;font-family:'JetBrains Mono',monospace;font-size:0.75em;color:#86efac;margin-bottom:8px;" title="${a.address}">${truncateHash(a.address, 16, 8)}</div>
+                                <div style="display:flex;gap:20px;font-size:0.82em;">
+                                    <span style="color:#f0f0f0;">${a.balance} CTK</span>
+                                    <span style="color:#6b6b6b;">nonce: ${a.nonce}</span>
+                                </div>
+                            </div>`).join('')}
+                    </div>`;
+            } catch (error) {
+                displayResponse('allAccountsResponse', { error: error.message }, false);
+            }
+        }
+
+        async function getMempool() {
+            showLoading('mempoolResponse');
+            try {
+                const response = await fetch(`${API_BASE}/get_mempool`);
+                const data = await response.json();
+                if (!response.ok) { displayResponse('mempoolResponse', data.message || data.error, false); return; }
+
+                const txs = data.pending || [];
+                if (txs.length === 0) {
+                    document.getElementById('mempoolResponse').innerHTML =
+                        '<div class="response success"><p style="color:#6b6b6b;font-size:0.82em;">Mempool is empty</p></div>';
+                    return;
+                }
+
+                const typeNames = { 0: 'Transfer', 1: 'Coinbase' };
+
+                document.getElementById('mempoolResponse').innerHTML = `
+                    <div class="response success">
+                        <div style="font-size:0.72em;text-transform:uppercase;letter-spacing:0.06em;color:#6b6b6b;margin-bottom:12px;">${txs.length} pending</div>
+                        ${txs.map(tx => {
+                            const type = typeNames[tx.tx_type] || 'Transfer';
+                            return `
+                            <div class="mempool-item">
+                                <span class="gas-price-tag">gas ${tx.gas_price ?? 0}</span>
+                                <div style="margin-bottom:6px;font-size:0.82em;font-weight:500;color:#c0c0c0;">${type}</div>
+                                <div style="font-size:0.78em;color:#6b6b6b;font-family:'JetBrains Mono',monospace;">
+                                    <div>From: <span style="color:#86efac;" title="${tx.sender_address || ''}">${truncateHash(tx.sender_address || tx.from || '-')}</span></div>
+                                    <div>To: &nbsp;&nbsp;<span style="color:#86efac;" title="${tx.receiver_address || ''}">${truncateHash(tx.receiver_address || tx.to || '-')}</span></div>
+                                    ${tx.amount ? `<div style="margin-top:4px;color:#c0c0c0;">Amount: ${tx.amount} CTK</div>` : ''}
+                                    <div style="margin-top:4px;">Gas limit: ${tx.gas_limit || 21000} &nbsp; Nonce: ${tx.nonce}</div>
+                                </div>
+                            </div>`;
+                        }).join('')}
+                    </div>`;
+            } catch (error) {
+                displayResponse('mempoolResponse', { error: error.message }, false);
+            }
+        }
+
         window.addEventListener('load', () => {
-            console.log('Blockchain Dashboard loaded');
+            console.log('blockchain-py dashboard loaded');
         });
     </script>
 </body>
 </html>
-

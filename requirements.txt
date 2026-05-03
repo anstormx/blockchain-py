@@ -2,4 +2,5 @@ Flask==2.3.0
 requests==2.31.0
 pycryptodome==3.19.0
 ecdsa==0.18.0
+ply==3.11
 
